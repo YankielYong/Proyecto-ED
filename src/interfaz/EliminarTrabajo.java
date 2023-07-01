@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -22,8 +23,10 @@ import javax.swing.border.LineBorder;
 
 import util.MyButtonModel;
 import util.TrabajosTableModel;
+import logica.Notificacion;
 import logica.Red;
 import logica.Trabajo;
+import logica.Usuario;
 import cu.edu.cujae.ceis.graph.vertex.Vertex;
 
 public class EliminarTrabajo extends JDialog{
@@ -43,6 +46,7 @@ public class EliminarTrabajo extends JDialog{
 	private JLabel lblOrden;
 	private Red red;
 	private Vertex vUsuario;
+	private Usuario usuario;
 	private JLabel titulo;
 	private LinkedList<Trabajo> trabajos;
 
@@ -53,6 +57,7 @@ public class EliminarTrabajo extends JDialog{
 		red = r;
 		este = this;
 		vUsuario = v;
+		usuario = (Usuario)vUsuario.getInfo();
 		trabajos = red.trabajosDeUsuario(vUsuario);
 		setUndecorated(true);
 		setResizable(false);
@@ -115,7 +120,20 @@ public class EliminarTrabajo extends JDialog{
 							Trabajo t = trabajos.get(sel[i]);
 							String linea = t.getLineaInvestigacion();
 							String tema = t.getTema();
-							red.eliminarTrabajo(linea, tema);
+							try {
+								red.eliminarTrabajoFichero(linea, tema);
+								red.eliminarTrabajo(linea, tema);
+							} catch (Exception e1) {
+								e1.printStackTrace();
+							}
+							Notificacion no = new Notificacion(vUsuario, Notificacion.ELIMINA_TRABAJO);
+							ArrayList<Usuario> aut = t.getAutores();
+							for(int h=0; h<aut.size(); h++){
+								Usuario c = aut.get(h);
+								c = (Usuario)red.buscarUsuario(c.getNick()).getInfo();
+								if(!c.getNick().equals(usuario.getNick()))
+									c.getNotificaciones().add(no);
+							}
 						}
 						anterior.ponerTrabajos();
 						anterior.setVisible(true);

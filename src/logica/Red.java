@@ -131,6 +131,72 @@ public class Red{
 		return lista;
 	}
 	
+	public void agregarTrabajoAFichero(Trabajo t) throws IOException, ClassNotFoundException{
+		RandomAccessFile fich = new RandomAccessFile(trab, "rw");
+		long posIni = fich.getFilePointer();
+		int cantTrabajos = fich.readInt();
+		for(int i=0; i<cantTrabajos; i++)
+			fich.skipBytes(fich.readInt());
+		byte[] trabajoAB = Convert.toBytes(t);
+		fich.writeInt(trabajoAB.length);
+		fich.write(trabajoAB);
+		fich.seek(posIni);
+		fich.writeInt(++cantTrabajos);
+		fich.close();
+	}
+	
+	public void eliminarTrabajoFichero(String linea, String tema) throws IOException, ClassNotFoundException{
+		int pos = obtenerIndiceDeTrabajo(linea, tema);
+		RandomAccessFile fich = new RandomAccessFile(trab, "rw");
+		long posIni = fich.getFilePointer();
+		int cantTrabajos = fich.readInt();
+		int i=0;
+		while(i<pos){
+			fich.skipBytes(fich.readInt());
+			i++;
+		}
+		long posEsc;
+		long posLeer = 0;
+		boolean primeraIteracion = true;
+		while(i<cantTrabajos){
+			posEsc = fich.getFilePointer();
+			if(cantTrabajos-1 != i){
+				if(primeraIteracion){
+					fich.skipBytes(fich.readInt());
+					primeraIteracion = false;
+				}
+				else
+					fich.seek(posLeer);
+				byte[] trabajoAB = new byte[fich.readInt()];
+				fich.read(trabajoAB);
+				posLeer = fich.getFilePointer();
+				fich.seek(posEsc);
+				fich.writeInt(trabajoAB.length);
+				fich.write(trabajoAB);
+			}
+			else
+				fich.writeInt(0);
+			i++;
+		}
+		fich.seek(posIni);
+		fich.writeInt(--cantTrabajos);
+		fich.close();
+	}
+	
+	private int obtenerIndiceDeTrabajo(String linea, String tema){
+		int index = 0;
+		boolean encontrado = false;
+		Iterator<Trabajo> iter = trabajos.iterator();
+		while(iter.hasNext() && !encontrado){
+			Trabajo trab = iter.next();
+			if(trab.getLineaInvestigacion().equals(linea) && trab.getTema().equals(tema))
+				encontrado = true;
+			else
+				index++;
+		}
+		return index;
+	}
+	
 	private void inicializar() throws ClassNotFoundException, IOException{
 		ArrayList<Usuario> us = leerFicheroUsuarios();
 		ArrayList<Arco> ar = leerFicheroArcos();

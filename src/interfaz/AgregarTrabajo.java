@@ -25,6 +25,7 @@ import util.MyButtonModel;
 import util.UsuariosTableModel;
 import util.Validaciones;
 import cu.edu.cujae.ceis.graph.vertex.Vertex;
+import logica.Notificacion;
 import logica.Red;
 import logica.Trabajo;
 import logica.Usuario;
@@ -33,6 +34,7 @@ import javax.swing.JTextField;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -226,6 +228,17 @@ public class AgregarTrabajo extends JDialog{
 					aut.addAll(autores);
 					Trabajo t = new Trabajo(tema, lineaInvestigacion, aut);
 					red.getTrabajos().add(t);
+					try {
+						red.agregarTrabajoAFichero(t);
+					} catch (ClassNotFoundException | IOException e1) {
+						e1.printStackTrace();
+					}
+					Notificacion n = new Notificacion(vUsuario, Notificacion.PUBLICA_TRABAJO);
+					for(int h=0; h<autores.size(); h++){
+						Usuario c = autores.get(h);
+						c = (Usuario)red.buscarUsuario(c.getNick()).getInfo();
+						c.getNotificaciones().add(n);
+					}
 					dispose();
 					MensajeAviso m = new MensajeAviso(padre, este, "Se ha publicado con éxito", MensajeAviso.CORRECTO);
 					m.setVisible(true);
