@@ -35,6 +35,9 @@ import util.UsuariosTableModel;
 
 import javax.swing.JTextField;
 
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+
 public class DescubrirPersonas extends JDialog{
 
 	private static final long serialVersionUID = 1L;
@@ -56,6 +59,7 @@ public class DescubrirPersonas extends JDialog{
 	private Vertex vUsuario;
 	private Usuario usuario;
 	private LinkedList<Vertex> noAmigos;
+	private ArrayList<Usuario> listaMostrar;
 	private ArrayList<SolicitudAmistad> solicitudes;
 	private JLabel titulo;
 	private JTextField txtBuscar;
@@ -86,7 +90,7 @@ public class DescubrirPersonas extends JDialog{
 		panelSuperior.setBounds(0, 0, 1000, 30);
 		panelSuperior.setLayout(null);
 		contentPane.add(panelSuperior);
-		
+
 		titulo = new JLabel("Usuarios");
 		titulo.setForeground(Color.BLACK);
 		titulo.setFont(new Font("Arial", Font.PLAIN, 20));
@@ -188,13 +192,53 @@ public class DescubrirPersonas extends JDialog{
 		tableDescubrir.setFont(new Font("Arial", Font.PLAIN, 15));
 		tableDescubrir.setBackground(Color.WHITE);
 		scrollPanePersonas.setViewportView(tableDescubrir);
-		
+
 		txtBuscar = new JTextField();
+		txtBuscar.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyReleased(KeyEvent e) {
+				listaMostrar = new ArrayList<Usuario>();
+				String nombre=txtBuscar.getText();
+				if(nombre.length() > 0){
+					Iterator<Vertex>iter=noAmigos.iterator();
+					while(iter.hasNext()){
+						Vertex v=iter.next();
+						Usuario u=(Usuario)v.getInfo();
+						String name=u.getNick();
+						if(nombre.length()<=name.length()){
+							boolean igual = true;
+							for(int i=0; i<nombre.length() && igual;i++){
+								if(!((Character)nombre.charAt(i)).equals((Character)name.charAt(i))){
+									igual = false;
+								}
+							}
+							if(igual)
+								listaMostrar.add(u);
+						}
+					}
+				}
+				else{
+					Iterator<Vertex> iter = noAmigos.iterator();
+					while(iter.hasNext()){
+						Usuario us = (Usuario)iter.next().getInfo();
+						listaMostrar.add(us);
+					}
+				}
+				actualizarTabla();
+			}
+			@Override
+			public void keyTyped(KeyEvent e) {
+				int key=e.getKeyChar();
+				boolean si= key==32;
+				if(si)
+					e.consume();
+			}
+		});
 		txtBuscar.setForeground(Color.BLACK);
 		txtBuscar.setFont(new Font("Arial", Font.PLAIN, 16));
 		txtBuscar.setBounds(15, 25, 400, 30);
 		panelInferiorDerecho.add(txtBuscar);
-		
+
 		lblBuscar = new JLabel("");
 		lblBuscar.setIcon(new ImageIcon(DescubrirPersonas.class.getResource("/imagenes/lupa buscar 25.png")));
 		lblBuscar.setBounds(425, 28, 25, 25);
@@ -234,11 +278,11 @@ public class DescubrirPersonas extends JDialog{
 		tableDescubrir.getColumnModel().getColumn(2).setResizable(false);
 		scrollPanePersonas.getViewport().setBackground(Color.WHITE);
 		scrollPaneSolicitudes.getViewport().setBackground(Color.WHITE);
-		mostrarNoAmigos();
+		hallarNoAmigos();
 		mostrarSolicitudes();
 	}
 
-	private void mostrarNoAmigos(){
+	private void hallarNoAmigos(){
 		noAmigos = new LinkedList<Vertex>();
 		LinkedList<Vertex> amigos = vUsuario.getAdjacents();
 		Iterator<Vertex> iter = red.getGrafo().getVerticesList().iterator();
@@ -254,7 +298,23 @@ public class DescubrirPersonas extends JDialog{
 			tableModelPersonas.addRow(datos);
 		}
 	}
-	
+
+	private void actualizarTabla(){
+		tableModelPersonas = new UsuariosTableModel(){
+			private static final long serialVersionUID = 1L;
+			@Override
+			public boolean isCellEditable(int row, int column) {
+				return false;
+			}
+		};
+		tableDescubrir.setModel(tableModelPersonas);
+		for(int i=0; i<listaMostrar.size(); i++){
+			Usuario u = listaMostrar.get(i);
+			String[] datos = {u.getNick(), u.getProfesion(), u.getPais()};
+			tableModelPersonas.addRow(datos);
+		}
+	}
+
 	private void mostrarSolicitudes(){
 		for(int i=0; i<solicitudes.size(); i++){
 			Usuario u = solicitudes.get(i).getUsuario();
