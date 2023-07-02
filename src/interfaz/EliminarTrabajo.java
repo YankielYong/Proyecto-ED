@@ -131,13 +131,16 @@ public class EliminarTrabajo extends JDialog{
 							ArrayList<Usuario> aut = t.getAutores();
 							for(int h=0; h<aut.size(); h++){
 								Usuario c = aut.get(h);
-								c = (Usuario)red.buscarUsuario(c.getNick()).getInfo();
-								if(!c.getNick().equals(usuario.getNick())){
-									c.getNotificaciones().add(no);
-									try {
-										red.modificarUsuarioEnFichero(c);
-									} catch (ClassNotFoundException | IOException e1) {
-										e1.printStackTrace();
+								Vertex v = red.buscarUsuario(c.getNick());
+								if(v != null){
+									c = (Usuario)v.getInfo();
+									if(!c.getNick().equals(usuario.getNick())){
+										c.getNotificaciones().add(no);
+										try {
+											red.modificarUsuarioEnFichero(c);
+										} catch (ClassNotFoundException | IOException e1) {
+											e1.printStackTrace();
+										}
 									}
 								}
 							}
