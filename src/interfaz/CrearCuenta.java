@@ -10,6 +10,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -240,6 +241,11 @@ public class CrearCuenta extends JDialog{
 				String profesion = (String)comboBoxProfesion.getSelectedItem();
 				Usuario u = new Usuario(nick, password, pais, profesion);
 				red.getGrafo().insertVertex(u);
+				try {
+					red.agregarUsuarioAFichero(u);
+				} catch (ClassNotFoundException | IOException e1) {
+					e1.printStackTrace();
+				}
 				Vertex vU = red.buscarUsuario(nick);
 				padre.setVUsuario(vU);
 				dispose();

@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
@@ -114,6 +115,11 @@ public class VentanaNotificaciones extends JDialog{
 		btnLimpiar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				notificaciones.clear();
+				try {
+					red.modificarUsuarioEnFichero(usuario);
+				} catch (ClassNotFoundException | IOException e1) {
+					e1.printStackTrace();
+				}
 				dispose();
 				int cantN = usuario.getNotificaciones().size();
 				int cantS = usuario.getSolicitudes().size();

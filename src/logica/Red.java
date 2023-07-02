@@ -13,31 +13,31 @@ import cu.edu.cujae.ceis.graph.interfaces.ILinkedWeightedEdgeNotDirectedGraph;
 import cu.edu.cujae.ceis.graph.vertex.Vertex;
 
 public class Red{
-	
+
 	private File usuarios;
 	private File arcos;
 	private File trab;
 	private ILinkedWeightedEdgeNotDirectedGraph grafo = new LinkedGraph();
 	private LinkedList<Trabajo> trabajos;
-	
+
 	public Red() throws IOException, ClassNotFoundException{
 		usuarios = new File("data/USUARIOS.DAT");
 		arcos = new File("data/ARCOS.DAT");
 		trab = new File("data/TRABAJOS.DAT");
 		grafo = new LinkedGraph();
 		trabajos = new LinkedList<Trabajo>();
-		
+
 		/*crearFicheroUsuarios();
 		crearFicheroTrabajos();
 		crearFicheroArcos();*/
-		
+
 		inicializar();
 	}
-	
+
 	public ILinkedWeightedEdgeNotDirectedGraph getGrafo(){
 		return grafo;
 	}
-	
+
 	public LinkedList<Trabajo> getTrabajos() {
 		return trabajos;
 	}
@@ -52,7 +52,7 @@ public class Red{
 		}
 		return aux;
 	}
-	
+
 	public void eliminarTrabajo(String linea, String tema){
 		Iterator<Trabajo> iter = trabajos.iterator();
 		boolean eliminado = false;
@@ -62,7 +62,7 @@ public class Red{
 				iter.remove();
 		}
 	}
-	
+
 	public boolean yaExiste(String n){
 		boolean yaExiste = false;
 		Iterator<Vertex> iter = grafo.getVerticesList().iterator();
@@ -73,7 +73,7 @@ public class Red{
 		}
 		return yaExiste;
 	}
-	
+
 	public boolean existeTrabajo(String linea, String tema){
 		boolean existe = false;
 		Iterator<Trabajo> iter = trabajos.iterator();
@@ -84,7 +84,7 @@ public class Red{
 		}
 		return existe;
 	}
-	
+
 	public boolean sonAmigos(Vertex v1, Vertex v2){
 		boolean amigos = false;
 		LinkedList<Vertex> amigosV1 = v1.getAdjacents();
@@ -92,7 +92,7 @@ public class Red{
 			amigos = true;
 		return amigos;
 	}
-	
+
 	public int calcularPeso(int pos1, int pos2){
 		int peso = 0;
 		Usuario u1 = (Usuario)grafo.getVerticesList().get(pos1).getInfo();
@@ -112,7 +112,7 @@ public class Red{
 		}
 		return peso;
 	}
-	
+
 	public LinkedList<Trabajo> trabajosDeUsuario(Vertex vertex){
 		LinkedList<Trabajo> lista = new LinkedList<Trabajo>();
 		Usuario usuario = (Usuario)vertex.getInfo();
@@ -130,7 +130,181 @@ public class Red{
 		}
 		return lista;
 	}
-	
+
+	public void agregarArcoAFichero(int posOrigen, int posDestino) throws IOException, ClassNotFoundException{
+		Arco a = new Arco(posOrigen, posDestino);
+		RandomAccessFile fich = new RandomAccessFile(arcos, "rw");
+		long posIni = fich.getFilePointer();
+		int cantArcos = fich.readInt();
+		for(int i=0; i<cantArcos; i++)
+			fich.skipBytes(fich.readInt());
+		byte[] arcoAB = Convert.toBytes(a);
+		fich.writeInt(arcoAB.length);
+		fich.write(arcoAB);
+		fich.seek(posIni);
+		fich.writeInt(++cantArcos);
+		fich.close();
+	}
+	public void eliminarArcoFichero(int posOrigen, int posDestino) throws IOException, ClassNotFoundException{
+		int pos = obtenerIndiceArco(posOrigen, posDestino);
+		RandomAccessFile fich = new RandomAccessFile(arcos, "rw");
+		long posIni = fich.getFilePointer();
+		int cantArcos = fich.readInt();
+		int i=0;
+		while(i<pos){
+			fich.skipBytes(fich.readInt());
+			i++;
+		}
+		long posEsc;
+		long posLeer = 0;
+		boolean primeraIteracion = true;
+		while(i<cantArcos){
+			posEsc = fich.getFilePointer();
+			if(cantArcos-1 != i){
+				if(primeraIteracion){
+					fich.skipBytes(fich.readInt());
+					primeraIteracion = false;
+				}
+				else
+					fich.seek(posLeer);
+				byte[] arcoAB = new byte[fich.readInt()];
+				fich.read(arcoAB);
+				posLeer = fich.getFilePointer();
+				fich.seek(posEsc);
+				fich.writeInt(arcoAB.length);
+				fich.write(arcoAB);
+			}
+			else
+				fich.writeInt(0);
+			i++;
+		}
+		fich.seek(posIni);
+		fich.writeInt(--cantArcos);
+		fich.close();
+	}
+	private int obtenerIndiceArco(int posOrigen, int posDestino) throws IOException, ClassNotFoundException{
+		RandomAccessFile fich = new RandomAccessFile(arcos, "r");
+		int index = 0;
+		int cantArcos = fich.readInt();
+		boolean encontrado = false;
+		for(int i=0; i<cantArcos && !encontrado; i++){
+			byte[] arcoAB = new byte[fich.readInt()];
+			fich.read(arcoAB);
+			Arco a = (Arco)Convert.toObject(arcoAB);
+			if(a.getOrigen() == posOrigen && a.getDestino() == posDestino){
+				index = i;
+				encontrado = true;
+			}
+			else if(a.getOrigen() == posDestino && a.getDestino() == posOrigen){
+				index = i;
+				encontrado = true;
+			}
+		}
+		fich.close();
+		return index;
+	}
+
+	public void agregarUsuarioAFichero(Usuario u) throws IOException, ClassNotFoundException{
+		RandomAccessFile fich = new RandomAccessFile(usuarios, "rw");
+		long posIni = fich.getFilePointer();
+		int cantUsuarios = fich.readInt();
+		for(int i=0; i<cantUsuarios; i++)
+			fich.skipBytes(fich.readInt());
+		byte[] usuarioAB = Convert.toBytes(u);
+		fich.writeInt(usuarioAB.length);
+		fich.write(usuarioAB);
+		fich.seek(posIni);
+		fich.writeInt(++cantUsuarios);
+		fich.close();
+	}
+	public void modificarUsuarioEnFichero(Usuario us) throws IOException, ClassNotFoundException{
+		int pos = obtenerIndiceUsuario(us.getNick());
+		RandomAccessFile fich = new RandomAccessFile(usuarios, "rw");
+		int cantidadUsuarios = fich.readInt();
+		int i=0;
+		while(i<pos){
+			fich.skipBytes(fich.readInt());
+			i++;
+		}
+		long posModificar = fich.getFilePointer();
+		int j=i;
+		fich.skipBytes(fich.readInt());
+		i++;
+		LinkedList<Usuario> agregar = new LinkedList<Usuario>();
+		agregar.add(us);
+		while(i<cantidadUsuarios){
+			byte[] usuarioAB = new byte[fich.readInt()];
+			fich.read(usuarioAB);
+			Usuario u = (Usuario)Convert.toObject(usuarioAB);
+			agregar.add(u);
+			i++;
+		}
+		fich.seek(posModificar);
+		fich.writeInt(0);
+		fich.seek(posModificar);
+		Iterator<Usuario> iter = agregar.iterator();
+		while(j<cantidadUsuarios){
+			Usuario u = iter.next();
+			byte[] usuarioAB = Convert.toBytes(u);
+			fich.writeInt(usuarioAB.length);
+			fich.write(usuarioAB);
+			j++;
+		}
+		fich.close();
+	}
+	public void eliminarUsuarioDeFichero(int pos) throws IOException, ClassNotFoundException{
+		RandomAccessFile fich = new RandomAccessFile(usuarios, "rw");
+		long posIni = fich.getFilePointer();
+		int cantUsuarios = fich.readInt();
+		int i=0;
+		while(i<pos){
+			fich.skipBytes(fich.readInt());
+			i++;
+		}
+		long posEsc;
+		long posLeer = 0;
+		boolean primeraIteracion = true;
+		while(i<cantUsuarios){
+			posEsc = fich.getFilePointer();
+			if(cantUsuarios-1 != i){
+				if(primeraIteracion){
+					fich.skipBytes(fich.readInt());
+					primeraIteracion = false;
+				}
+				else
+					fich.seek(posLeer);
+				byte[] usuarioAB = new byte[fich.readInt()];
+				fich.read(usuarioAB);
+				posLeer = fich.getFilePointer();
+				fich.seek(posEsc);
+				fich.writeInt(usuarioAB.length);
+				fich.write(usuarioAB);
+			}
+			else
+				fich.writeInt(0);
+			i++;
+		}
+		fich.seek(posIni);
+		fich.writeInt(--cantUsuarios);
+		fich.close();
+		eliminarArcosDeUsuarioEnFichero(pos);
+		modificarArcosNecesarios(pos, ++cantUsuarios);
+	}
+	private int obtenerIndiceUsuario(String nick){
+		int index = 0;
+		LinkedList<Vertex> lista = grafo.getVerticesList();
+		Iterator<Vertex> iter = lista.iterator();
+		boolean encontrado = false;
+		while(iter.hasNext() && !encontrado){
+			Usuario u = (Usuario)iter.next().getInfo();
+			if(u.getNick().equals(nick))
+				encontrado = true;
+			else
+				index++;
+		}
+		return index;
+	}
+
 	public void agregarTrabajoAFichero(Trabajo t) throws IOException, ClassNotFoundException{
 		RandomAccessFile fich = new RandomAccessFile(trab, "rw");
 		long posIni = fich.getFilePointer();
@@ -144,7 +318,41 @@ public class Red{
 		fich.writeInt(++cantTrabajos);
 		fich.close();
 	}
-	
+	public void modificarTrabajoEnFichero(Trabajo t) throws IOException, ClassNotFoundException{
+		int pos = obtenerIndiceDeTrabajo(t.getLineaInvestigacion(), t.getTema());
+		RandomAccessFile fich = new RandomAccessFile(trab, "rw");
+		int cantTrabajos = fich.readInt();
+		int i=0;
+		while(i<pos){
+			fich.skipBytes(fich.readInt());
+			i++;
+		}
+		long posModificar = fich.getFilePointer();
+		int j=i;
+		fich.skipBytes(fich.readInt());
+		i++;
+		LinkedList<Trabajo> agregar = new LinkedList<Trabajo>();
+		agregar.add(t);
+		while(i<cantTrabajos){
+			byte[] trabajoAB = new byte[fich.readInt()];
+			fich.read(trabajoAB);
+			Trabajo tr = (Trabajo)Convert.toObject(trabajoAB);
+			agregar.add(tr);
+			i++;
+		}
+		fich.seek(posModificar);
+		fich.writeInt(0);
+		fich.seek(posModificar);
+		Iterator<Trabajo> iter = agregar.iterator();
+		while(j<cantTrabajos){
+			Trabajo tr = iter.next();
+			byte[] trabajoAB = Convert.toBytes(tr);
+			fich.writeInt(trabajoAB.length);
+			fich.write(trabajoAB);
+			j++;
+		}
+		fich.close();
+	}
 	public void eliminarTrabajoFichero(String linea, String tema) throws IOException, ClassNotFoundException{
 		int pos = obtenerIndiceDeTrabajo(linea, tema);
 		RandomAccessFile fich = new RandomAccessFile(trab, "rw");
@@ -182,7 +390,6 @@ public class Red{
 		fich.writeInt(--cantTrabajos);
 		fich.close();
 	}
-	
 	private int obtenerIndiceDeTrabajo(String linea, String tema){
 		int index = 0;
 		boolean encontrado = false;
@@ -196,19 +403,133 @@ public class Red{
 		}
 		return index;
 	}
-	
+
+	private void eliminarArcosDeUsuarioEnFichero(int index) throws IOException, ClassNotFoundException{
+		boolean parar = false;
+		while(!parar){
+			int pos = buscarArcoDeUsuario(index);
+			if(pos != -1)
+				eliminarArcoDeFicheroDeUnaPosicion(pos);
+			else
+				parar = true;
+		}
+	}
+	private void eliminarArcoDeFicheroDeUnaPosicion(int pos) throws IOException, ClassNotFoundException{
+		RandomAccessFile fich = new RandomAccessFile(arcos, "rw");
+		long posIni = fich.getFilePointer();
+		int cantArcos = fich.readInt();
+		int i=0;
+		while(i<pos){
+			fich.skipBytes(fich.readInt());
+			i++;
+		}
+		long posEsc;
+		long posLeer = 0;
+		boolean primeraIteracion = true;
+		while(i<cantArcos){
+			posEsc = fich.getFilePointer();
+			if(cantArcos-1 != i){
+				if(primeraIteracion){
+					fich.skipBytes(fich.readInt());
+					primeraIteracion = false;
+				}
+				else
+					fich.seek(posLeer);
+				byte[] arcoAB = new byte[fich.readInt()];
+				fich.read(arcoAB);
+				posLeer = fich.getFilePointer();
+				fich.seek(posEsc);
+				fich.writeInt(arcoAB.length);
+				fich.write(arcoAB);
+			}
+			else
+				fich.writeInt(0);
+			i++;
+		}
+		fich.seek(posIni);
+		fich.writeInt(--cantArcos);
+		fich.close();
+	}
+	private int buscarArcoDeUsuario(int valor) throws IOException, ClassNotFoundException{
+		int index = -1;
+		RandomAccessFile fich = new RandomAccessFile(arcos, "r");
+		int cantArcos = fich.readInt();
+		boolean encontrado = false;
+		for(int i=0; i<cantArcos && !encontrado; i++){
+			byte[] arcoAB = new byte[fich.readInt()];
+			fich.read(arcoAB);
+			Arco a = (Arco)Convert.toObject(arcoAB);
+			if(a.getOrigen() == valor || a.getDestino() == valor){
+				encontrado = true;
+				index = i;
+			}
+		}
+		fich.close();
+		return index;
+	}
+	private void modificarArcosNecesarios(int valorInicio, int cantUsuarios) throws IOException, ClassNotFoundException{
+		int numeroModificar = valorInicio+1;
+		while(numeroModificar < cantUsuarios){
+			int index = buscarArcoDeUsuario(numeroModificar);
+			if(index != -1)
+				modificarValorDeArco(index, numeroModificar);
+			else
+				numeroModificar++;
+		}
+	}
+	private void modificarValorDeArco(int pos, int valor) throws IOException, ClassNotFoundException{
+		RandomAccessFile fich = new RandomAccessFile(arcos, "rw");
+		int cantArcos = fich.readInt();
+		int i=0;
+		while(i<pos){
+			fich.skipBytes(fich.readInt());
+			i++;
+		}
+		long posModificar = fich.getFilePointer();
+		int j=i;
+		i++;
+		byte[] arcoAB = new byte[fich.readInt()];
+		fich.read(arcoAB);
+		Arco a = (Arco)Convert.toObject(arcoAB);
+		if(a.getOrigen() == valor)
+			a.setOrigen(valor-1);
+		else if(a.getDestino() == valor)
+			a.setDestino(valor-1);
+		LinkedList<Arco> agregar = new LinkedList<Arco>();
+		agregar.add(a);
+		while(i<cantArcos){
+			arcoAB = new byte[fich.readInt()];
+			fich.read(arcoAB);
+			a = (Arco)Convert.toObject(arcoAB);
+			agregar.add(a);
+			i++;
+		}
+		fich.seek(posModificar);
+		fich.writeInt(0);
+		fich.seek(posModificar);
+		Iterator<Arco> iter = agregar.iterator();
+		while(j<cantArcos){
+			a = iter.next();
+			arcoAB = Convert.toBytes(a);
+			fich.writeInt(arcoAB.length);
+			fich.write(arcoAB);
+			j++;
+		}
+		fich.close();
+	}
+
 	private void inicializar() throws ClassNotFoundException, IOException{
 		ArrayList<Usuario> us = leerFicheroUsuarios();
 		ArrayList<Arco> ar = leerFicheroArcos();
 		LinkedList<Trabajo> tr = leerFicheroTrabajos();
-		
+
 		for(Usuario u : us)
 			grafo.insertVertex(u);
-		
+
 		Iterator<Trabajo> iter = tr.iterator();
 		while(iter.hasNext())
 			trabajos.add(iter.next());
-		
+
 		for(Arco a : ar){
 			int origen = a.getOrigen();
 			int destino = a.getDestino();
@@ -328,7 +649,7 @@ public class Red{
 		a.add(new Arco(0, 121));
 		a.add(new Arco(0, 122));
 		a.add(new Arco(0, 123));
-		
+
 		a.add(new Arco(1, 2));
 		a.add(new Arco(1, 3));
 		a.add(new Arco(1, 4));
@@ -352,7 +673,7 @@ public class Red{
 		a.add(new Arco(1, 56));
 		a.add(new Arco(1, 68));
 		a.add(new Arco(1, 121));
-		
+
 		a.add(new Arco(2, 3));
 		a.add(new Arco(2, 4));
 		a.add(new Arco(2, 5));
@@ -364,7 +685,7 @@ public class Red{
 		a.add(new Arco(2, 18));
 		a.add(new Arco(2, 25));
 		a.add(new Arco(2, 28));
-		
+
 		a.add(new Arco(3, 4));
 		a.add(new Arco(3, 5));
 		a.add(new Arco(3, 9));
@@ -376,7 +697,7 @@ public class Red{
 		a.add(new Arco(3, 17));
 		a.add(new Arco(3, 18));
 		a.add(new Arco(3, 28));
-		
+
 		a.add(new Arco(4, 5));
 		a.add(new Arco(4, 6));
 		a.add(new Arco(4, 11));
@@ -387,7 +708,7 @@ public class Red{
 		a.add(new Arco(4, 17));
 		a.add(new Arco(4, 18));
 		a.add(new Arco(4, 28));
-		
+
 		a.add(new Arco(5, 11));
 		a.add(new Arco(5, 13));
 		a.add(new Arco(5, 14));
@@ -396,9 +717,9 @@ public class Red{
 		a.add(new Arco(5, 17));
 		a.add(new Arco(5, 18));
 		a.add(new Arco(5, 28));
-		
+
 		a.add(new Arco(7, 8));
-		
+
 		a.add(new Arco(8, 9));
 		a.add(new Arco(8, 10));
 		a.add(new Arco(8, 11));
@@ -406,7 +727,7 @@ public class Red{
 		a.add(new Arco(8, 28));
 		a.add(new Arco(8, 41));
 		a.add(new Arco(8, 120));
-		
+
 		a.add(new Arco(9, 10));
 		a.add(new Arco(9, 11));
 		a.add(new Arco(9, 12));
@@ -416,7 +737,7 @@ public class Red{
 		a.add(new Arco(9, 28));
 		a.add(new Arco(9, 47));
 		a.add(new Arco(9, 120));
-		
+
 		a.add(new Arco(10, 11));
 		a.add(new Arco(10, 12));
 		a.add(new Arco(10, 19));
@@ -424,38 +745,37 @@ public class Red{
 		a.add(new Arco(10, 60));
 		a.add(new Arco(10, 114));
 		a.add(new Arco(10, 120));
-		
+
 		a.add(new Arco(11, 12));
 		a.add(new Arco(11, 16));
 		a.add(new Arco(11, 17));
 		a.add(new Arco(11, 19));
 		a.add(new Arco(11, 28));
 		a.add(new Arco(11, 120));
-		
+
 		a.add(new Arco(12, 16));
 		a.add(new Arco(12, 19));
 		a.add(new Arco(12, 28));
 		a.add(new Arco(12, 120));
-		
+
 		a.add(new Arco(13, 15));
 		a.add(new Arco(13, 17));
-		
+
 		a.add(new Arco(14, 17));
 		a.add(new Arco(14, 18));
 		a.add(new Arco(14, 25));
 		a.add(new Arco(14, 28));
-		
+
 		a.add(new Arco(16, 17));
 		a.add(new Arco(16, 25));
 		a.add(new Arco(16, 28));
 		a.add(new Arco(16, 120));
-		
-		a.add(new Arco(17, 18));
+
 		a.add(new Arco(17, 18));
 		a.add(new Arco(17, 49));
-		
+
 		a.add(new Arco(19, 28));
-		
+
 		a.add(new Arco(21, 27));
 		a.add(new Arco(21, 29));
 		a.add(new Arco(21, 30));
@@ -465,51 +785,51 @@ public class Red{
 		a.add(new Arco(21, 48));
 		a.add(new Arco(21, 56));
 		a.add(new Arco(21, 68));
-		
+
 		a.add(new Arco(22, 76));
-		
+
 		a.add(new Arco(24, 51));
 		a.add(new Arco(24, 78));
-		
+
 		a.add(new Arco(25, 28));
 		a.add(new Arco(25, 31));
 		a.add(new Arco(25, 121));
-		
+
 		a.add(new Arco(28, 31));
 		a.add(new Arco(28, 121));
-		
+
 		a.add(new Arco(31, 121));
-		
+
 		a.add(new Arco(38, 65));
-		
+
 		a.add(new Arco(43, 70));
 		a.add(new Arco(43, 97));
-		
+
 		a.add(new Arco(44, 71));
 		a.add(new Arco(44, 98));
-		
+
 		a.add(new Arco(46, 73));
 		a.add(new Arco(46, 100));
-		
+
 		a.add(new Arco(51, 78));
-		
+
 		a.add(new Arco(54, 81));
 		a.add(new Arco(54, 108));
-		
+
 		a.add(new Arco(65, 92));
-		
+
 		a.add(new Arco(70, 97));
-		
+
 		a.add(new Arco(71, 98));
-		
+
 		a.add(new Arco(73, 100));
-		
+
 		a.add(new Arco(81, 108));
-		
+
 		a.add(new Arco(92, 121));
-		
+
 		a.add(new Arco(122, 123));
-		
+
 		return a;
 	}
 	private ArrayList<Usuario> listaUsuarios(){
@@ -638,7 +958,7 @@ public class Red{
 		u.add(new Usuario("llerena777_", "daniel123", "Cuba", "Ingeniero/a Químico/a"));					//121
 		u.add(new Usuario("_arlety_gj", "arlety123", "Cuba", "Arquitecto/a"));								//122
 		u.add(new Usuario("thali_0401", "thalia123", "Cuba", "Arquitecto/a"));								//123
-		
+
 		return u;
 	}
 	private LinkedList<Trabajo> listaTrabajos(){
@@ -646,7 +966,7 @@ public class Red{
 		ArrayList<Usuario> u = listaUsuarios();
 		ArrayList<Usuario> autores = new ArrayList<Usuario>();
 		Trabajo t;
-		
+
 		t = new Trabajo("Acondicionamiento Ambiental", 
 				"La actividad humana y el ambiente construido");									//0
 		autores.add(u.get(6));
@@ -666,7 +986,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Acondicionamiento Ambiental", 
 				"Zonificación de vivienda y diseño preliminar de fenestración");					//2
 		autores.add(u.get(75));
@@ -676,7 +996,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Cosmética", 
 				"Control de producción de productos relacionados a la industria");					//3
 		autores.add(u.get(38));
@@ -685,7 +1005,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Cosmética", 
 				"Reducción de gastos y aumento de la calidad del producto");						//4
 		autores.add(u.get(38));
@@ -694,7 +1014,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Defensa Nacional", "Doctrina Militar Cubana");								//5
 		autores.add(u.get(44));
 		autores.add(u.get(71));
@@ -702,35 +1022,35 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Defensa Nacional", "El trabajo del EPMI");									//6
 		autores.add(u.get(44));
 		autores.add(u.get(71));
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Defensa Nacional", "Las BDP y la Zona de Defensa");						//7
 		autores.add(u.get(44));
 		autores.add(u.get(98));
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Defensa Nacional", "Las MTT y las FE");									//8
 		autores.add(u.get(71));
 		autores.add(u.get(98));
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Deporte", "El deporte y el estrés laboral");								//9
 		autores.add(u.get(22));
 		autores.add(u.get(76));
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Deporte", 
 				"La interdisciplinariedad en la práctica sistemática del deporte");					//10
 		autores.add(u.get(17));
@@ -756,7 +1076,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Deporte", "Valores y virtudes del deporte");								//13
 		autores.add(u.get(17));
 		t.getAutores().addAll(autores);
@@ -786,7 +1106,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Derecho", "Ensayo: Documentos jurídicos - Cosette Ramos");					//18
 		autores.add(u.get(8));
 		t.getAutores().addAll(autores);
@@ -798,7 +1118,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Derecho",
 				"Ensayo: Historia del Estado y el Derecho en Cuba - Cosette Ramos");				//20
 		autores.add(u.get(8));
@@ -812,14 +1132,14 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Derecho", "Tipos de Estado modernos");										//22
 		autores.add(u.get(8));
 		autores.add(u.get(9));
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Diseño", "La forma en el espacio unidimensional");							//23
 		autores.add(u.get(77));
 		t.getAutores().addAll(autores);
@@ -832,14 +1152,14 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Diseño", "La forma en el espacio tridimensional");							//25
 		autores.add(u.get(77));
 		autores.add(u.get(123));
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Diseño Geométrico de Obras Viales", "Diseño geométrico de carreteras");	//26
 		autores.add(u.get(11));
 		autores.add(u.get(12));
@@ -848,7 +1168,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Diseño Geométrico de Obras Viales", "Drenaje Víal");						//27
 		autores.add(u.get(11));
 		autores.add(u.get(12));
@@ -857,7 +1177,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Economía", "Costos y gastos directos e indirectos");						//28
 		autores.add(u.get(24));
 		autores.add(u.get(51));
@@ -865,21 +1185,21 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Economía", "Ideas de negocios");											//29
 		autores.add(u.get(13));
 		autores.add(u.get(24));
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Economía", "Rentabilidad del negocio");									//30
 		autores.add(u.get(13));
 		autores.add(u.get(105));
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Filosofía",
 				"Ideas de Ernesto Guevara sobre la enajenación");									//31
 		autores.add(u.get(54));
@@ -888,7 +1208,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Filosofía",
 				"La teoría del conocimiento Dialéctico Materialista");								//32
 		autores.add(u.get(54));
@@ -896,7 +1216,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Industria alimentaria",
 				"Control de calidad en la industria alimentaria");									//33
 		autores.add(u.get(38));
@@ -905,7 +1225,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Industria alimentaria",
 				"Control de la producción en la industria alimentaria");							//34
 		autores.add(u.get(65));
@@ -913,7 +1233,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Industria alimentaria",
 				"Control del impacto a la salud de los alimentos procesados");						//35
 		autores.add(u.get(38));
@@ -922,7 +1242,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Inteligencia artificial",
 				"Aprendizaje automático para la detección de fraudes");								//36
 		autores.add(u.get(2));
@@ -931,7 +1251,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Inteligencia artificial",
 				"Reconocimiento de imágenes mediante redes neuronales");							//37
 		autores.add(u.get(0));
@@ -939,7 +1259,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Inteligencia artificial", "Robótica autónoma");							//38
 		autores.add(u.get(0));
 		autores.add(u.get(1));
@@ -949,7 +1269,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Inteligencia artificial",
 				"Sistemas de recomendación basados en el aprendizaje automático");					//39
 		autores.add(u.get(0));
@@ -960,7 +1280,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Materiales", "Microscopía óptica");										//40
 		autores.add(u.get(11));
 		autores.add(u.get(12));
@@ -968,14 +1288,14 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Materiales", "Adiciones al hormigón");										//41
 		autores.add(u.get(11));
 		autores.add(u.get(12));
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Medicina",
 				"Efectos del tabaquismo y el alcoholismo al organismo");							//42
 		autores.add(u.get(43));
@@ -984,7 +1304,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Modelación Mecánica de Estructuras", 
 				"Cálculos de una nave industrial de hormigón y acero");								//43
 		autores.add(u.get(11));
@@ -992,7 +1312,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Morfología", "Análisis de movimientos");									//44
 		autores.add(u.get(43));
 		autores.add(u.get(70));
@@ -1000,14 +1320,14 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Petroquímica", "Control de la extracción del crudo");						//45
 		autores.add(u.get(38));
 		autores.add(u.get(92));
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Petroquímica", "Control de los derivados del petróleo");					//46
 		autores.add(u.get(38));
 		autores.add(u.get(92));
@@ -1015,7 +1335,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Petroquímica", "Control del proceso de refinación");						//47
 		autores.add(u.get(92));
 		autores.add(u.get(119));
@@ -1023,7 +1343,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Política", "La organización política de la sociedad");						//48
 		autores.add(u.get(46));
 		autores.add(u.get(73));
@@ -1031,7 +1351,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Política", "Tipos de estado y formas de gobierno");						//49
 		autores.add(u.get(46));
 		autores.add(u.get(73));
@@ -1039,7 +1359,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Procesamiento de datos masivos",
 				"Optimización de almacenamiento y gestión de datos masivos");						//50
 		autores.add(u.get(25));
@@ -1048,7 +1368,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Procesamiento de datos masivos",
 				"Procesamiento de datos masivos en tiempo real");									//51
 		autores.add(u.get(25));
@@ -1057,7 +1377,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Seguridad Informática",
 				"Análisis de las vulnerabilidades de las redes Wi-Fi");								//52
 		autores.add(u.get(0));
@@ -1066,7 +1386,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Seguridad Informática", "Análisis y detección de malware");				//53
 		autores.add(u.get(0));
 		autores.add(u.get(1));
@@ -1074,7 +1394,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Seguridad Informática", "Criptografía y protocolos de seguridad");			//54
 		autores.add(u.get(0));
 		autores.add(u.get(3));
@@ -1083,7 +1403,7 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Seguridad Informática",
 				"Estudio de vulnerabilidades en sitios y aplicaciones web");						//55
 		autores.add(u.get(0));
@@ -1091,31 +1411,31 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Topografía", "Estudios topográficos - Adriana Domínguez");					//56
 		autores.add(u.get(16));
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Topografía", "Estudios topográficos - Gabriela Gómez");					//57
 		autores.add(u.get(120));
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Topografía", "Estudios topográficos - Mario Melo");						//58
 		autores.add(u.get(11));
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Topografía", "Estudios topográficos - Miguel Álvarez");					//59
 		autores.add(u.get(12));
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		t = new Trabajo("Topografía", "Nuevas tecnologías de la topografía");						//60
 		autores.add(u.get(11));
 		autores.add(u.get(12));
@@ -1124,8 +1444,8 @@ public class Red{
 		t.getAutores().addAll(autores);
 		autores.clear();
 		trabajos.add(t);
-		
+
 		return trabajos ;
 	}
-	
+
 }

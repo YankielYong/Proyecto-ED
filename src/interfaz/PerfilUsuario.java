@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -170,7 +171,7 @@ public class PerfilUsuario extends JDialog{
 			boolean esta = false;
 			for(int i=0; i<perfil.getSolicitudes().size() && !esta; i++){
 				SolicitudAmistad s = perfil.getSolicitudes().get(i);
-				Usuario pe = (Usuario)s.getVertex().getInfo();
+				Usuario pe = s.getUsuario();
 				if(pe.getNick().equals(usuario.getNick())){
 					btnSolicitud = new JButton("Solicitud Enviada");
 					esta = true;
@@ -179,7 +180,7 @@ public class PerfilUsuario extends JDialog{
 			if(!esta){
 				for(int i=0; i<usuario.getSolicitudes().size() && !esta; i++){
 					SolicitudAmistad s = usuario.getSolicitudes().get(i);
-					Usuario pe = (Usuario)s.getVertex().getInfo();
+					Usuario pe = s.getUsuario();
 					if(pe.getNick().equals(perfil.getNick())){
 						btnSolicitud = new JButton("Aceptar Solicitud");
 						esta = true;
@@ -197,6 +198,11 @@ public class PerfilUsuario extends JDialog{
 					perfil.getSolicitudes().add(s);
 					perfil.getNotificaciones().add(n);
 					btnSolicitud.setText("Solicitud Enviada");
+					try {
+						red.modificarUsuarioEnFichero(perfil);
+					} catch (ClassNotFoundException | IOException e1) {
+						e1.printStackTrace();
+					}
 				}
 				else if(btnSolicitud.getText().equals("Aceptar Solicitud")){
 					btnCancelarSolicitud.setVisible(false);
@@ -204,10 +210,20 @@ public class PerfilUsuario extends JDialog{
 					int pos1 = red.getGrafo().getVerticesList().indexOf(vUsuario);
 					int pos2 = red.getGrafo().getVerticesList().indexOf(vPerfil);
 					red.getGrafo().insertWEdgeNDG(pos1, pos2, red.calcularPeso(pos1, pos2));
+					try {
+						red.agregarArcoAFichero(pos1, pos2);
+					} catch (ClassNotFoundException | IOException e2) {
+						e2.printStackTrace();
+					}
 					eliminarSolicitud();
 					dispose();
 					Notificacion n = new Notificacion(vUsuario, Notificacion.ACEPTA_SOLICITUD);
 					perfil.getNotificaciones().add(n);
+					try {
+						red.modificarUsuarioEnFichero(perfil);
+					} catch (ClassNotFoundException | IOException e1) {
+						e1.printStackTrace();
+					}
 					PerfilUsuario pe = new PerfilUsuario(padre, anterior, red, vUsuario, vPerfil);
 					pe.setVisible(true);
 				}
@@ -219,6 +235,11 @@ public class PerfilUsuario extends JDialog{
 						cancelarSolicitud();
 						Notificacion n = new Notificacion(vUsuario, Notificacion.CANCELA_SOLICITUD);
 						perfil.getNotificaciones().add(n);
+						try {
+							red.modificarUsuarioEnFichero(perfil);
+						} catch (ClassNotFoundException | IOException e1) {
+							e1.printStackTrace();
+						}
 						PerfilUsuario pe = new PerfilUsuario(padre, anterior, red, vUsuario, vPerfil);
 						pe.setVisible(true);
 					}
@@ -231,6 +252,11 @@ public class PerfilUsuario extends JDialog{
 						eliminarAmigo();
 						Notificacion n = new Notificacion(vUsuario, Notificacion.ELIMINA_AMIGO);
 						perfil.getNotificaciones().add(n);
+						try {
+							red.modificarUsuarioEnFichero(perfil);
+						} catch (ClassNotFoundException | IOException e1) {
+							e1.printStackTrace();
+						}
 						PerfilUsuario pe = new PerfilUsuario(padre, anterior, red, vUsuario, vPerfil);
 						pe.setVisible(true);
 					}
@@ -454,6 +480,11 @@ public class PerfilUsuario extends JDialog{
 					eliminarSolicitud();
 					Notificacion n = new Notificacion(vUsuario, Notificacion.RECHAZA_SOLICITUD);
 					perfil.getNotificaciones().add(n);
+					try {
+						red.modificarUsuarioEnFichero(perfil);
+					} catch (ClassNotFoundException | IOException e1) {
+						e1.printStackTrace();
+					}
 					PerfilUsuario pe = new PerfilUsuario(padre, anterior, red, vUsuario, vPerfil);
 					pe.setVisible(true);
 				}
@@ -481,10 +512,15 @@ public class PerfilUsuario extends JDialog{
 		boolean eliminado = false;
 		for(int i=0; i<solicitudes.size() && !eliminado; i++){
 			SolicitudAmistad s = solicitudes.get(i);
-			Usuario us = (Usuario)s.getVertex().getInfo();
+			Usuario us = s.getUsuario();
 			if(us.getNick().equals(perfil.getNick())){
 				solicitudes.remove(i);
 				eliminado = true;
+			}
+			try {
+				red.modificarUsuarioEnFichero(usuario);
+			} catch (ClassNotFoundException | IOException e) {
+				e.printStackTrace();
 			}
 		}
 		int cantN = usuario.getNotificaciones().size();
@@ -497,7 +533,7 @@ public class PerfilUsuario extends JDialog{
 		boolean cancelada = false;
 		for(int i=0; i<solicitudes.size() && !cancelada; i++){
 			SolicitudAmistad s = solicitudes.get(i);
-			Usuario u = (Usuario)s.getVertex().getInfo();
+			Usuario u = s.getUsuario();
 			if(u.getNick().equals(usuario.getNick())){
 				solicitudes.remove(i);
 				cancelada = true;
@@ -509,5 +545,10 @@ public class PerfilUsuario extends JDialog{
 		int pos1 = red.getGrafo().getVerticesList().indexOf(vUsuario);
 		int pos2 = red.getGrafo().getVerticesList().indexOf(vPerfil);
 		red.getGrafo().deleteEdgeND(pos1, pos2);
+		try {
+			red.eliminarArcoFichero(pos1, pos2);
+		} catch (ClassNotFoundException | IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

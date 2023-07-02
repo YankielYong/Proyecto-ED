@@ -76,7 +76,7 @@ public class PerfilTrabajo extends JDialog{
 		panelSuperior.setBounds(0, 0, 800, 30);
 		contentPane.add(panelSuperior);
 		panelSuperior.setLayout(null);
-		
+
 		titulo = new JLabel("Información del Trabajo/Proyecto");
 		titulo.setForeground(Color.BLACK);
 		titulo.setFont(new Font("Arial", Font.PLAIN, 20));
@@ -157,7 +157,7 @@ public class PerfilTrabajo extends JDialog{
 		logoCUJAE.setIcon(new ImageIcon(MiPerfil.class.getResource("/imagenes/logo CUJAE 181x200.png")));
 		logoCUJAE.setBounds(178, 30, 181, 200);
 		panelInferior.add(logoCUJAE);
-		
+
 		lblFoto = new JLabel("");
 		lblFoto.setIcon(new ImageIcon(MiPerfil.class.getResource("/imagenes/documento.png")));
 		lblFoto.setBounds(400, 30, 234, 200);
@@ -179,13 +179,19 @@ public class PerfilTrabajo extends JDialog{
 				int pos = table.getSelectedRow();
 				Usuario u = trabajo.getAutores().get(pos);
 				Vertex vPerf = red.buscarUsuario(u.getNick());
-				if(!vPerf.equals(vUsuario)){
-					PerfilUsuario ventP = new PerfilUsuario(padre, este, red, vUsuario, vPerf);
-					ventP.setVisible(true);
+				if(vPerf != null){
+					if(!vPerf.equals(vUsuario)){
+						PerfilUsuario ventP = new PerfilUsuario(padre, este, red, vUsuario, vPerf);
+						ventP.setVisible(true);
+					}
+					else{
+						MiPerfil ventMiP = new MiPerfil(padre, red, vUsuario);
+						ventMiP.setVisible(true);
+					}
 				}
 				else{
-					MiPerfil ventMiP = new MiPerfil(padre, red, vUsuario);
-					ventMiP.setVisible(true);
+					MensajeAviso m = new MensajeAviso(padre, este, "Este usuario ya no existe en la red", MensajeAviso.ERROR);
+					m.setVisible(true);
 				}
 			}
 		});

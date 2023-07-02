@@ -8,13 +8,13 @@ public class SolicitudAmistad implements Serializable{
 
 	private static final long serialVersionUID = 1L;
 	
-	private Vertex vertex;
+	private Usuario usuario;
 	
 	public SolicitudAmistad(Vertex v){
-		vertex = v;
+		usuario = (Usuario)v.getInfo();
 	}
 	
-	public Vertex getVertex(){
-		return vertex;
+	public Usuario getUsuario(){
+		return usuario;
 	}
 }

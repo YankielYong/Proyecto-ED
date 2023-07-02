@@ -155,7 +155,8 @@ public class DescubrirPersonas extends JDialog{
 			public void mouseClicked(MouseEvent e) {
 				este.setVisible(false);
 				int pos = tableSolicitudes.getSelectedRow();
-				Vertex ver = solicitudes.get(pos).getVertex();
+				Usuario us = solicitudes.get(pos).getUsuario();
+				Vertex ver = red.buscarUsuario(us.getNick());
 				PerfilUsuario ventanaPerfil = new PerfilUsuario(padre, este, red, vUsuario, ver);
 				ventanaPerfil.setVisible(true);
 			}
@@ -256,7 +257,7 @@ public class DescubrirPersonas extends JDialog{
 	
 	private void mostrarSolicitudes(){
 		for(int i=0; i<solicitudes.size(); i++){
-			Usuario u = (Usuario)solicitudes.get(i).getVertex().getInfo();
+			Usuario u = solicitudes.get(i).getUsuario();
 			String[] datos = {u.getNick(), u.getProfesion(), u.getPais()};
 			tableModelSolicitudes.addRow(datos);
 		}

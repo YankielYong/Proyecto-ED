@@ -20,6 +20,7 @@ import javax.swing.JLabel;
 
 import java.awt.Font;
 import java.awt.Cursor;
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -71,6 +72,7 @@ public class MiPerfil extends JDialog{
 	private JLabel titulo;
 	private JButton btnPublicarTrabajo;
 	private JButton btnEliminarTrabajo;
+	private JButton btnEliminarC;
 
 	public MiPerfil(Inicial p, Red r, Vertex v){
 		super(p, true);
@@ -199,7 +201,7 @@ public class MiPerfil extends JDialog{
 		});
 		btnCerrarSesion.setFont(new Font("Arial", Font.BOLD, 22));
 		btnCerrarSesion.setBackground(new Color(46, 139, 87));
-		btnCerrarSesion.setBounds(90, 495, 300, 40);
+		btnCerrarSesion.setBounds(30, 495, 200, 40);
 		btnCerrarSesion.setFocusable(false);
 		panelInferiorIzquierdo.add(btnCerrarSesion);
 
@@ -230,6 +232,51 @@ public class MiPerfil extends JDialog{
 		btnConfig.setContentAreaFilled(false);
 		btnConfig.setBorderPainted(false);
 		panelInferiorIzquierdo.add(btnConfig);
+
+		btnEliminarC = new JButton("Eliminar cuenta");
+		btnEliminarC.setModel(new MyButtonModel());
+		btnEliminarC.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				este.setVisible(false);
+				dispose();
+				try {
+					MensajeAviso m = new MensajeAviso(padre, este, "¿Desea eliminar su cuenta?", MensajeAviso.INFORMACION);
+					m.setVisible(true);
+					if(m.getValor()){
+						padre.setVUsuario(null);
+						int pos = red.getGrafo().getVerticesList().indexOf(vUsuario);
+						red.getGrafo().deleteVertex(pos);
+						try {
+							red.eliminarUsuarioDeFichero(pos);
+						} catch (ClassNotFoundException | IOException e1) {
+							e1.printStackTrace();
+						}
+						MensajeAviso me = new MensajeAviso(padre, este, "Su cuenta ha sido eliminada", MensajeAviso.CORRECTO);
+						me.setVisible(true);
+						padre.iniciarSesion();
+					}
+				} catch (ParseException e1) {
+					e1.printStackTrace();
+				}
+			}
+		});
+		btnEliminarC.setForeground(Color.BLACK);
+		btnEliminarC.setBorder(null);
+		btnEliminarC.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				btnEliminarC.setBorder(new LineBorder(new Color(0, 255, 127), 3));
+			}
+			@Override
+			public void mouseExited(MouseEvent e) {
+				btnEliminarC.setBorder(null);
+			}
+		});
+		btnEliminarC.setFont(new Font("Arial", Font.BOLD, 22));
+		btnEliminarC.setBackground(new Color(46, 139, 87));
+		btnEliminarC.setFocusable(false);
+		btnEliminarC.setBounds(250, 495, 200, 40);
+		panelInferiorIzquierdo.add(btnEliminarC);
 
 		btnAmigos = new JButton("Amigos");
 		btnAmigos.setModel(new MyButtonModel());
@@ -275,7 +322,7 @@ public class MiPerfil extends JDialog{
 
 		tablaAmigos();
 	}
-	
+
 	public void ponerTrabajos(){
 		panelInferiorDerecho.remove(scrollPane);
 		scrollPane = new JScrollPane();
@@ -288,7 +335,7 @@ public class MiPerfil extends JDialog{
 		crearTabla();
 		tablaTrabajos();
 	}
-	
+
 	public void ponerAmigos(){
 		panelInferiorDerecho.remove(scrollPane);
 		panelInferiorDerecho.remove(btnPublicarTrabajo);
@@ -302,7 +349,7 @@ public class MiPerfil extends JDialog{
 		crearTabla();
 		tablaAmigos();
 	}
-	
+
 	private void crearTabla(){
 		table = new JTable();
 		table.addMouseListener(new MouseAdapter() {
@@ -373,7 +420,7 @@ public class MiPerfil extends JDialog{
 		scrollPane.getViewport().setBackground(Color.WHITE);
 		btnAmigos.setBorderPainted(false);
 		btnTrabajos.setBorderPainted(true);
-		
+
 		btnPublicarTrabajo = new JButton("Publicar");
 		btnPublicarTrabajo.setModel(new MyButtonModel());
 		btnPublicarTrabajo.addActionListener(new ActionListener() {
@@ -401,7 +448,7 @@ public class MiPerfil extends JDialog{
 		btnPublicarTrabajo.setBounds(60, 495, 150, 40);
 		btnPublicarTrabajo.setFocusable(false);
 		panelInferiorDerecho.add(btnPublicarTrabajo);
-		
+
 		btnEliminarTrabajo = new JButton("Eliminar");
 		btnEliminarTrabajo.setModel(new MyButtonModel());
 		btnEliminarTrabajo.addActionListener(new ActionListener() {

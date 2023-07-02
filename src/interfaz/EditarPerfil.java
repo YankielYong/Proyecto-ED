@@ -31,6 +31,7 @@ import util.Validaciones;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -301,6 +302,11 @@ public class EditarPerfil extends JDialog{
 				usuario.setPassword(password);
 				usuario.setPais(pais);
 				usuario.setProfesion(profesion);
+				try {
+					red.modificarUsuarioEnFichero(usuario);
+				} catch (ClassNotFoundException | IOException e1) {
+					e1.printStackTrace();
+				}
 				dispose();
 				anterior = new MiPerfil(padre, red, vUsuario);
 				anterior.setVisible(true);
@@ -432,13 +438,20 @@ public class EditarPerfil extends JDialog{
 		Iterator<Trabajo> iter = trab.iterator();
 		while(iter.hasNext()){
 			Trabajo t = iter.next();
-			for(int i=0; i<t.getAutores().size(); i++){
+			boolean esta = false;
+			for(int i=0; i<t.getAutores().size() && !esta; i++){
 				Usuario u = t.getAutores().get(i);
 				if(u.getNick().equals(usuario.getNick())){
+					esta = true;
 					u.setNick(nick);
 					u.setPassword(password);
 					u.setPais(pais);
 					u.setProfesion(profesion);
+					try {
+						red.modificarTrabajoEnFichero(t);
+					} catch (ClassNotFoundException | IOException e) {
+						e.printStackTrace();
+					}
 				}
 			}
 		}

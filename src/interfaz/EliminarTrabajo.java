@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -131,8 +132,14 @@ public class EliminarTrabajo extends JDialog{
 							for(int h=0; h<aut.size(); h++){
 								Usuario c = aut.get(h);
 								c = (Usuario)red.buscarUsuario(c.getNick()).getInfo();
-								if(!c.getNick().equals(usuario.getNick()))
+								if(!c.getNick().equals(usuario.getNick())){
 									c.getNotificaciones().add(no);
+									try {
+										red.modificarUsuarioEnFichero(c);
+									} catch (ClassNotFoundException | IOException e1) {
+										e1.printStackTrace();
+									}
+								}
 							}
 						}
 						anterior.ponerTrabajos();

@@ -238,6 +238,11 @@ public class AgregarTrabajo extends JDialog{
 						Usuario c = autores.get(h);
 						c = (Usuario)red.buscarUsuario(c.getNick()).getInfo();
 						c.getNotificaciones().add(n);
+						try {
+							red.modificarUsuarioEnFichero(c);
+						} catch (ClassNotFoundException | IOException e1) {
+							e1.printStackTrace();
+						}
 					}
 					dispose();
 					MensajeAviso m = new MensajeAviso(padre, este, "Se ha publicado con éxito", MensajeAviso.CORRECTO);
