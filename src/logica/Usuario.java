@@ -2,7 +2,6 @@ package logica;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.LinkedList;
 
 import util.*;
 
@@ -13,7 +12,6 @@ public class Usuario implements Serializable{
 	private String password;
 	private String pais;
 	private String profesion;
-	private LinkedList<Trabajo> trabajos;
 	private ArrayList<Notificacion> notificaciones;
 	private ArrayList<SolicitudAmistad> solicitudes;
 
@@ -22,7 +20,6 @@ public class Usuario implements Serializable{
 		setPassword(password);
 		this.pais = pais;
 		this.profesion = profesion;
-		trabajos = new LinkedList<Trabajo>();
 		notificaciones = new ArrayList<Notificacion>();
 		solicitudes = new ArrayList<SolicitudAmistad>();
 	}
@@ -75,9 +72,5 @@ public class Usuario implements Serializable{
 
 	public void setProfesion(String profesion) {
 		this.profesion = profesion;
-	}
-
-	public LinkedList<Trabajo> getTrabajos(){
-		return trabajos;
 	}
 }

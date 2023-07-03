@@ -105,7 +105,7 @@ public class VentanaNotificaciones extends JDialog{
 
 		panelInferior = new JPanel();
 		panelInferior.setBackground(Color.WHITE);
-		panelInferior.setBounds(0, 30, 1000, 590);
+		panelInferior.setBounds(0, 30, 1000, 570);
 		panelInferior.setLayout(null);
 		contentPane.add(panelInferior);
 

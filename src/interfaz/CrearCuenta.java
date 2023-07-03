@@ -125,6 +125,15 @@ public class CrearCuenta extends JDialog{
 					verificacion();
 				}
 			}
+			@Override
+			public void keyTyped(KeyEvent e) {
+				int key=e.getKeyChar();
+				boolean si = false;
+				if(key == 46 || key == 95 || (key >= 48 && key <= 57) || (key >= 65 && key <= 90) || (key >= 97 && key <=122))
+					si = true;
+				if(!si)
+					e.consume();
+			}
 		});
 		textUsuario.setBounds(75, 250, 250, 30);
 		textUsuario.setFont(new Font("Arial", Font.PLAIN, 15));
@@ -179,6 +188,13 @@ public class CrearCuenta extends JDialog{
 					pValido = false;
 					verificacion();
 				}
+			}
+			@Override
+			public void keyTyped(KeyEvent e) {
+				int key=e.getKeyChar();
+				boolean si = key==32;
+				if(si)
+					e.consume();
 			}
 		});
 		textPassword.setBounds(75, 320, 250, 30);

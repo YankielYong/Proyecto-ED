@@ -47,6 +47,7 @@ public class Inicial extends JFrame {
 	private JButton btnAmigos;
 	private JButton btnNotificaciones;
 	private JButton btnProyectos;
+	private JButton btnReportes;
 	private Inicial este;
 	private CLabel cantSolct; int cantN;
 	private CLabel cantNotif; int cantS;
@@ -232,7 +233,34 @@ public class Inicial extends JFrame {
 		btnNotificaciones.setLayout(null);
 		panelIzquierdo.add(btnNotificaciones);
 
-
+		btnReportes = new JButton("");
+		btnReportes.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Reportes r = new Reportes(este, red, vUsuario);
+				r.setVisible(true);
+			}
+		});
+		btnReportes.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				btnReportes.setContentAreaFilled(true);
+				btnReportes.setIcon(new ImageIcon(Inicial.class.getResource("/imagenes/info 80.png")));
+			}
+			@Override
+			public void mouseExited(MouseEvent e) {
+				btnReportes.setContentAreaFilled(false);
+				btnReportes.setIcon(new ImageIcon(Inicial.class.getResource("/imagenes/info 70.png")));
+			}
+		});
+		btnReportes.setIcon(new ImageIcon(Inicial.class.getResource("/imagenes/info 70.png")));
+		btnReportes.setFocusable(false);
+		btnReportes.setModel(new MyButtonModel());
+		btnReportes.setBackground(new Color(0, 255, 127));
+		btnReportes.setContentAreaFilled(false);
+		btnReportes.setBorderPainted(false);
+		btnReportes.setBounds(0, 580, 125, 110);
+		btnReportes.setLayout(null);
+		panelIzquierdo.add(btnReportes);
 
 		borde = new JLabel("");
 		borde.setBounds(25, -11, 480, 360);

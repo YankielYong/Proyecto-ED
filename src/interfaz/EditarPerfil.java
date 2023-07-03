@@ -195,6 +195,15 @@ public class EditarPerfil extends JDialog{
 					verificacion();
 				}
 			}
+			@Override
+			public void keyTyped(KeyEvent e) {
+				int key=e.getKeyChar();
+				boolean si = false;
+				if(key == 46 || key == 95 || (key >= 48 && key <= 57) || (key >= 65 && key <= 90) || (key >= 97 && key <=122))
+					si = true;
+				if(!si)
+					e.consume();
+			}
 		});
 		textUsuario.setBackground(Color.WHITE);
 		textUsuario.setEditable(false);
@@ -251,6 +260,13 @@ public class EditarPerfil extends JDialog{
 					pValido = false;
 					verificacion();
 				}
+			}
+			@Override
+			public void keyTyped(KeyEvent e) {
+				int key=e.getKeyChar();
+				boolean si = key==32;
+				if(si)
+					e.consume();
 			}
 		});
 		textPassword.setBackground(Color.WHITE);

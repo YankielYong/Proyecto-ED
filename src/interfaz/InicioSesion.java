@@ -33,6 +33,8 @@ import util.MyButtonModel;
 import cu.edu.cujae.ceis.graph.vertex.Vertex;
 import logica.Red;
 import logica.Usuario;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 
 public class InicioSesion extends JDialog {
@@ -79,6 +81,17 @@ public class InicioSesion extends JDialog {
 		panelInferior.setLayout(null);
 
 		textUsuario = new JTextField();
+		textUsuario.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyTyped(KeyEvent e) {
+				int key=e.getKeyChar();
+				boolean si = false;
+				if(key == 46 || key == 95 || (key >= 48 && key <= 57) || (key >= 65 && key <= 90) || (key >= 97 && key <=122))
+					si = true;
+				if(!si)
+					e.consume();
+			}
+		});
 		textUsuario.setBounds(75, 280, 250, 30);
 		textUsuario.setFont(new Font("Arial", Font.PLAIN, 15));
 		textUsuario.setBorder(new LineBorder(new Color(46, 139, 87), 3, true));
@@ -117,6 +130,15 @@ public class InicioSesion extends JDialog {
 		panelInferior.add(btnMostrarPassword);
 
 		textPassword = new JPasswordField();
+		textPassword.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyTyped(KeyEvent e) {
+				int key=e.getKeyChar();
+				boolean si = key==32;
+				if(si)
+					e.consume();
+			}
+		});
 		textPassword.setBounds(75, 350, 250, 30);
 		textPassword.setMinimumSize(new Dimension(8, 20));
 		textPassword.setFont(new Font("Arial", Font.PLAIN, 15));
