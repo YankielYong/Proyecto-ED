@@ -180,7 +180,8 @@ public class DescubrirPersonas extends JDialog{
 			public void mouseClicked(MouseEvent e) {
 				este.setVisible(false);
 				int pos = tableDescubrir.getSelectedRow();
-				Vertex ver = noAmigos.get(pos);
+				Usuario u = listaMostrar.get(pos); 
+				Vertex ver = red.buscarUsuario(u.getNick());
 				PerfilUsuario ventanaPerfil = new PerfilUsuario(padre, este, red, vUsuario, ver);
 				ventanaPerfil.setVisible(true);
 			}
@@ -229,8 +230,10 @@ public class DescubrirPersonas extends JDialog{
 			@Override
 			public void keyTyped(KeyEvent e) {
 				int key=e.getKeyChar();
-				boolean si= key==32;
-				if(si)
+				boolean si = false;
+				if(key == 46 || key == 95 || (key >= 48 && key <= 57) || (key >= 65 && key <= 90) || (key >= 97 && key <=122))
+					si = true;
+				if(!si)
 					e.consume();
 			}
 		});

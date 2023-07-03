@@ -1,6 +1,7 @@
 package logica;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -19,11 +20,21 @@ public class Red{
 	private File trab;
 	private ILinkedWeightedEdgeNotDirectedGraph grafo = new LinkedGraph();
 	private LinkedList<Trabajo> trabajos;
+	private File arbolAmigos;
+	private File arbolConexiones;
+	private File lidereInvestigacion;
+	private File islas;
+	private File comunidades;
 
 	public Red() throws IOException, ClassNotFoundException{
 		usuarios = new File("data/USUARIOS.DAT");
 		arcos = new File("data/ARCOS.DAT");
 		trab = new File("data/TRABAJOS.DAT");
+		arbolAmigos = new File("output/Relación jerárquica de amigos.txt");
+		arbolConexiones = new File("output/Relación jerárquica de conexiones.txt");
+		lidereInvestigacion = new File("output/Líderes de investigación.txt");
+		islas = new File("output/Islas.txt");
+		comunidades = new File("output/Comunidades.txt");
 		grafo = new LinkedGraph();
 		trabajos = new LinkedList<Trabajo>();
 
@@ -129,6 +140,20 @@ public class Red{
 			}
 		}
 		return lista;
+	}
+	
+	public void actualizarFicheroIslas(ArrayList<Usuario> lista) throws IOException{
+		FileWriter fw = new FileWriter(islas);
+		fw.write("USUARIOS ISLAS");
+		for(int i=0; i<lista.size(); i++){
+			fw.write("\n\n");
+			Usuario u = lista.get(i);
+			fw.write("Usuario "+(i+1));
+			fw.write(":\nNombre de usuario: "+u.getNick());
+			fw.write("\nProfesión: "+u.getProfesion());
+			fw.write("\nPaís: "+u.getPais());
+		}
+		fw.close();
 	}
 
 	public void agregarArcoAFichero(int posOrigen, int posDestino) throws IOException, ClassNotFoundException{

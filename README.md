@@ -1,3 +1,3 @@
 # Proyecto-ED
 
-# ya esta funcionando todo lo relacionado con ficheros binarios (insertar, modificar y eliminar) tanto para los proyectos como para los usuarios
+# ya esta funcionando toda la red, se implementaron todos los buscadores de usuario, se prohibió introducir caracteres inválidos en nick y password, y se implementó el reporte de las ISLAS
