@@ -282,6 +282,7 @@ public class DescubrirPersonas extends JDialog{
 		scrollPanePersonas.getViewport().setBackground(Color.WHITE);
 		scrollPaneSolicitudes.getViewport().setBackground(Color.WHITE);
 		hallarNoAmigos();
+		
 		mostrarSolicitudes();
 	}
 
@@ -295,8 +296,10 @@ public class DescubrirPersonas extends JDialog{
 				noAmigos.add(v);
 		}
 		iter = noAmigos.iterator();
+		listaMostrar = new ArrayList<Usuario>();
 		while(iter.hasNext()){
 			Usuario u = (Usuario)iter.next().getInfo();
+			listaMostrar.add(u);
 			String[] datos = {u.getNick(), u.getProfesion(), u.getPais()};
 			tableModelPersonas.addRow(datos);
 		}
