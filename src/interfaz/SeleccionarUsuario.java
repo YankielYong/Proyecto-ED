@@ -121,6 +121,14 @@ public class SeleccionarUsuario extends JDialog{
 				dispose();
 				if(titulo.getText().equals("Relación jerárquica de amigos")){
 					red.obtenerRelacionJerDeAmigos(ver);
+					dispose();
+					PantallaNiveles pn=new PantallaNiveles(padre, anterior, red, ver);
+					pn.setVisible(true);
+				}
+				else if(titulo.getText().equals("Relación jerárquica de conexiones")){
+					dispose();
+					PantallaJerarquia pj = new PantallaJerarquia(padre, este, red, ver);
+					pj.setVisible(true);
 				}
 				else if(titulo.getText().equals("Relación jerárquica de conexiones")){
 					red.obtenerRelacionJerDeConexiones(ver);
