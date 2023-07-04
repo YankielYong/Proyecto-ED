@@ -6,11 +6,11 @@ import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -19,7 +19,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
@@ -28,15 +27,16 @@ import javax.swing.border.TitledBorder;
 import util.MyButtonModel;
 import util.UsuariosTableModel;
 import cu.edu.cujae.ceis.graph.vertex.Vertex;
+import logica.Comunidad;
 import logica.Red;
 import logica.Usuario;
 
-public class VentanaIslas extends JDialog{
+public class PerfilComunidad extends JDialog{
 
 	private static final long serialVersionUID = 1L;
 	private Inicial padre;
-	private Reportes anterior;
-	private VentanaIslas este;
+	private PerfilComunidad este;
+	private VentanaComunidades anterior;
 	private Dimension pantalla = Toolkit.getDefaultToolkit().getScreenSize();
 	private JPanel contentPane;
 	private JPanel panelSuperior;
@@ -44,28 +44,28 @@ public class VentanaIslas extends JDialog{
 	private JButton btnCerrar;
 	private JButton btnAtras;
 	private JLabel titulo;
+	private JLabel nameComunidad;
+	private JLabel logoCUJAE;
+	private JLabel lblFoto;
 	private JScrollPane scrollPane;
 	private JTable table;
 	private UsuariosTableModel tableModel;
 	private Red red;
 	private Vertex vUsuario;
+	private Comunidad comunidad;
 	private ArrayList<Usuario> listaMostrar;
-	private ArrayList<Usuario> islas;
-	private JTextField txtBuscar;
-	private JLabel lblBuscar;
 	
-	public VentanaIslas(Inicial p, Reportes a, Red r, Vertex v){
+	public PerfilComunidad(Inicial p, VentanaComunidades a, Red r, Vertex v, Comunidad c, int pos){
 		super(p, true);
 		padre = p;
 		anterior = a;
 		este = this;
 		red = r;
 		vUsuario = v;
-		islas = red.obtenerIslas();
-		listaMostrar = islas;
+		comunidad = c;
 		setResizable(false);
 		setUndecorated(true);
-		setBounds(pantalla.width/2-225, pantalla.height/2-270, 600, 600);
+		setBounds(pantalla.width/2-325, pantalla.height/2-270, 800, 600);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
 		contentPane = new JPanel();
@@ -76,11 +76,11 @@ public class VentanaIslas extends JDialog{
 
 		panelSuperior = new JPanel();
 		panelSuperior.setBackground(new Color(46, 139, 87));
-		panelSuperior.setBounds(0, 0, 600, 30);
+		panelSuperior.setBounds(0, 0, 800, 30);
 		contentPane.add(panelSuperior);
 		panelSuperior.setLayout(null);
 
-		titulo = new JLabel("Usuarios Islas");
+		titulo = new JLabel("Información de la comunidad");
 		titulo.setForeground(Color.BLACK);
 		titulo.setFont(new Font("Arial", Font.PLAIN, 20));
 		titulo.setBounds(8, 0, 300, 30);
@@ -88,7 +88,7 @@ public class VentanaIslas extends JDialog{
 
 		btnCerrar = new JButton("");
 		btnCerrar.setModel(new MyButtonModel());
-		btnCerrar.setBounds(555, 0, 45, 30);
+		btnCerrar.setBounds(755, 0, 45, 30);
 		panelSuperior.add(btnCerrar);
 		btnCerrar.setIcon(new ImageIcon(InicioSesion.class.getResource("/imagenes/salir 15.png")));
 		btnCerrar.setBackground(Color.RED);
@@ -113,124 +113,92 @@ public class VentanaIslas extends JDialog{
 
 		panelInferior = new JPanel();
 		panelInferior.setBackground(Color.WHITE);
-		panelInferior.setBounds(0, 30, 600, 570);
+		panelInferior.setBounds(0, 30, 800, 570);
 		panelInferior.setLayout(null);
 		contentPane.add(panelInferior);
-		
-		btnAtras = new JButton("Regresar");
+
+		btnAtras = new JButton("");
 		btnAtras.setModel(new MyButtonModel());
+		btnAtras.setBackground(new Color(46, 139, 87));
+		btnAtras.setIcon(new ImageIcon(PerfilUsuario.class.getResource("/imagenes/flecha izquierda 35.png")));
+		btnAtras.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				btnAtras.setContentAreaFilled(true);
+			}
+			@Override
+			public void mouseExited(MouseEvent e) {
+				btnAtras.setContentAreaFilled(false);
+			}
+		});
 		btnAtras.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				dispose();
 				anterior.setVisible(true);
 			}
 		});
-		btnAtras.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				btnAtras.setBorder(new LineBorder(new Color(0, 255, 127), 3));
-			}
-			@Override
-			public void mouseExited(MouseEvent e) {
-				btnAtras.setBorder(null);
-			}
-		});
-		btnAtras.setBorder(null);
-		btnAtras.setBounds(450, 505, 120, 40);
-		btnAtras.setForeground(Color.BLACK);
-		btnAtras.setBackground(new Color(46, 139, 87));
-		btnAtras.setFont(new Font("Arial", Font.BOLD, 22));
+		btnAtras.setFont(new Font("Arial", Font.PLAIN, 12));
+		btnAtras.setContentAreaFilled(false);
 		btnAtras.setFocusable(false);
+		btnAtras.setBorderPainted(false);
+		btnAtras.setBounds(10, 10, 42, 35);
 		panelInferior.add(btnAtras);
+		
+		logoCUJAE = new JLabel("");
+		logoCUJAE.setIcon(new ImageIcon(MiPerfil.class.getResource("/imagenes/logo CUJAE 181x200.png")));
+		logoCUJAE.setBounds(178, 30, 181, 200);
+		panelInferior.add(logoCUJAE);
+
+		lblFoto = new JLabel("");
+		lblFoto.setIcon(new ImageIcon(MiPerfil.class.getResource("/imagenes/comunidad 200.png")));
+		lblFoto.setBounds(400, 25, 250, 220);
+		panelInferior.add(lblFoto);
+		
+		nameComunidad = new JLabel("Comunidad "+(pos+1));
+		nameComunidad.setForeground(Color.BLACK);
+		nameComunidad.setFont(new Font("Arial", Font.PLAIN, 22));
+		nameComunidad.setBounds(30, 250, 740, 40);
+		panelInferior.add(nameComunidad);
 		
 		scrollPane = new JScrollPane();
 		scrollPane.setBackground(Color.WHITE);
-		scrollPane.setForeground(Color.BLACK);
 		scrollPane.setFont(new Font("Arial", Font.PLAIN, 22));
-		scrollPane.setBorder(new TitledBorder(new LineBorder(new Color(0, 0, 0), 1, true), "Usuarios Islas", TitledBorder.LEFT, TitledBorder.TOP, null, new Color(0, 0, 0)));
+		scrollPane.setBorder(new TitledBorder(new LineBorder(new Color(0, 0, 0), 1, true), "Miembros", TitledBorder.LEFT, TitledBorder.TOP, null, new Color(0, 0, 0)));
 		((TitledBorder)scrollPane.getBorder()).setTitleFont(new Font("Arial", Font.PLAIN, 22));
-		scrollPane.setBounds(25, 55, 550, 425);
+		scrollPane.setBounds(30, 300, 740, 240);
 		panelInferior.add(scrollPane);
 
 		table = new JTable();
-		table.setFocusable(false);
 		table.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				int pos = table.getSelectedRow();
-				Usuario us = listaMostrar.get(pos);
-				Vertex ver = red.buscarUsuario(us.getNick());
-				if(vUsuario.equals(ver)){
-					dispose();
-					MiPerfil frame = new MiPerfil(padre, red, vUsuario);
-					frame.setVisible(true);
+				Usuario u = listaMostrar.get(pos);
+				Vertex ver = red.buscarUsuario(u.getNick());
+				dispose();
+				if(!ver.equals(vUsuario)){
+					PerfilUsuario ventP = new PerfilUsuario(padre, este, red, vUsuario, ver);
+					ventP.setVisible(true);
 				}
 				else{
-					este.setVisible(false);
-					PerfilUsuario ventanaPerfil = new PerfilUsuario(padre, este, red, vUsuario, ver);
-					ventanaPerfil.setVisible(true);
+					MiPerfil ventMiP = new MiPerfil(padre, red, vUsuario);
+					ventMiP.setVisible(true);
 				}
 			}
 		});
+		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		table.setFocusable(false);
 		table.getTableHeader().setReorderingAllowed(false);
 		table.setRowHeight(30);
-		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		table.setForeground(Color.BLACK);
 		table.setFont(new Font("Arial", Font.PLAIN, 15));
 		table.setBackground(Color.WHITE);
 		scrollPane.setViewportView(table);
 		
-		txtBuscar = new JTextField();
-		txtBuscar.addKeyListener(new KeyAdapter() {
-			@Override
-			public void keyReleased(KeyEvent e) {
-				listaMostrar = new ArrayList<Usuario>();
-				String nombre=txtBuscar.getText();
-				if(nombre.length() > 0){
-					for(int i=0; i<islas.size(); i++){
-						Usuario u = islas.get(i);
-						String name = u.getNick();
-						if(nombre.length()<=name.length()){
-							boolean igual = true;
-							for(int j=0; j<nombre.length() && igual;j++){
-								if(!((Character)nombre.charAt(j)).equals((Character)name.charAt(j))){
-									igual = false;
-								}
-							}
-							if(igual)
-								listaMostrar.add(u);
-						}
-					}
-				}
-				else{
-					listaMostrar = islas;
-				}
-				mostrarIslas();
-			}
-			@Override
-			public void keyTyped(KeyEvent e) {
-				int key=e.getKeyChar();
-				boolean si = false;
-				if(key == 46 || key == 95 || (key >= 48 && key <= 57) || (key >= 65 && key <= 90) || (key >= 97 && key <=122))
-					si = true;
-				if(!si)
-					e.consume();
-			}
-		});
-		txtBuscar.setForeground(Color.BLACK);
-		txtBuscar.setFont(new Font("Arial", Font.PLAIN, 16));
-		txtBuscar.setBounds(25, 25, 500, 30);
-		panelInferior.add(txtBuscar);
-
-		lblBuscar = new JLabel("");
-		lblBuscar.setIcon(new ImageIcon(DescubrirPersonas.class.getResource("/imagenes/lupa buscar 25.png")));
-		lblBuscar.setBounds(535, 28, 25, 25);
-		panelInferior.add(lblBuscar);
-	
-		mostrarIslas();
+		inicializar();
 	}
 	
-	private void mostrarIslas(){
+	private void inicializar(){
 		tableModel = new UsuariosTableModel(){
 			private static final long serialVersionUID = 1L;
 			@Override
@@ -239,18 +207,32 @@ public class VentanaIslas extends JDialog{
 			}
 		};
 		table.setModel(tableModel);
-		table.getColumnModel().getColumn(0).setPreferredWidth(130);
+		table.getColumnModel().getColumn(0).setPreferredWidth(200);
 		table.getColumnModel().getColumn(0).setResizable(false);
-		table.getColumnModel().getColumn(1).setPreferredWidth(230);
+		table.getColumnModel().getColumn(1).setPreferredWidth(380);
 		table.getColumnModel().getColumn(1).setResizable(false);
-		table.getColumnModel().getColumn(2).setPreferredWidth(90);
+		table.getColumnModel().getColumn(2).setPreferredWidth(160);
 		table.getColumnModel().getColumn(2).setResizable(false);
 		scrollPane.getViewport().setBackground(Color.WHITE);
-		
+		mostrarMiembros();
+	}
+	
+	private void mostrarMiembros(){
+		hallarMiembros();
 		for(int i=0; i<listaMostrar.size(); i++){
 			Usuario u = listaMostrar.get(i);
 			String[] datos = {u.getNick(), u.getProfesion(), u.getPais()};
 			tableModel.addRow(datos);
+		}
+	}
+	
+	private void hallarMiembros(){
+		listaMostrar = new ArrayList<Usuario>();
+		LinkedList<Vertex> m = comunidad.getUsuarios();
+		Iterator<Vertex> iter = m.iterator();
+		while(iter.hasNext()){
+			Usuario u = (Usuario)iter.next().getInfo();
+			listaMostrar.add(u);
 		}
 	}
 }

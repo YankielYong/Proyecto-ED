@@ -265,6 +265,8 @@ public class CrearCuenta extends JDialog{
 				Vertex vU = red.buscarUsuario(nick);
 				padre.setVUsuario(vU);
 				dispose();
+				MensajeAviso m = new MensajeAviso(padre, anterior, "Su cuenta ha sido creada con éxito", MensajeAviso.CORRECTO);
+				m.setVisible(true);
 			}
 		});
 		btnRegistrarse.setEnabled(false);

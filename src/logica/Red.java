@@ -124,6 +124,125 @@ public class Red{
 		return peso;
 	}
 
+	public ArrayList<Usuario> obtenerIslas(){
+		ArrayList<Usuario> islas = new ArrayList<Usuario>();
+		LinkedList<Vertex> lista = grafo.getVerticesList();
+		Iterator<Vertex> iter = lista.iterator();
+		while(iter.hasNext()){
+			Vertex v = iter.next();
+			if(v.getAdjacents().size() == 0)
+				islas.add((Usuario)v.getInfo());
+		}
+		try {
+			actualizarFicheroIslas(islas);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return islas;
+	}
+	public ArrayList<Comunidad> obtenerComunidades(){
+		ArrayList<Comunidad> com = new ArrayList<Comunidad>();
+		Iterator<Vertex> iter = grafo.getVerticesList().iterator();
+		while(iter.hasNext()){
+			Vertex v = iter.next();
+			ArrayList<Comunidad> comV = obtenerComunidadesDeUsuario(v);
+			for(int i=0; i<comV.size(); i++){
+				Comunidad c = comV.get(i);
+				if(!yaExisteEstaComunidad(com, c.getUsuarios()))
+					com.add(c);
+			}
+		}
+		try {
+			actualizarFicheroComunidades(com);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return com;
+	}
+	private ArrayList<Comunidad> obtenerComunidadesDeUsuario(Vertex v){
+		ArrayList<Comunidad> com = new ArrayList<Comunidad>();
+		LinkedList<Vertex> adjV = v.getAdjacents();
+		Iterator<Vertex> iterAdjV = adjV.iterator();
+		while(iterAdjV.hasNext()){
+			Vertex ve = iterAdjV.next();
+			LinkedList<Vertex> lista = new LinkedList<Vertex>();
+			lista.add(v);
+			agregarComunidadesDeUsuario(ve, adjV, lista, com);
+		}
+		ArrayList<Comunidad> aux = new ArrayList<Comunidad>();
+		for(int i=0; i<com.size(); i++){
+			Comunidad c = com.get(i);
+			if(!yaExisteEstaComunidad(aux, c.getUsuarios()))
+				aux.add(c);
+		}
+		return com;
+	}
+	private void agregarComunidadesDeUsuario(Vertex v, LinkedList<Vertex> validos, LinkedList<Vertex> lista, ArrayList<Comunidad> com){
+		lista.add(v);
+		LinkedList<Vertex> aux = new LinkedList<Vertex>();
+		LinkedList<Vertex> adj = v.getAdjacents();
+		Iterator<Vertex> iterAdj = adj.iterator();
+		while(iterAdj.hasNext()){
+			Vertex vA = iterAdj.next();
+			boolean cond1 = false;
+			boolean cond2 = true;
+			Iterator<Vertex> iter = validos.iterator();
+			while(iter.hasNext() && !cond1){
+				if(iter.next().equals(vA))
+					cond1 = true;
+			}
+			if(cond1){
+				iter = lista.iterator();
+				while(iter.hasNext() && cond2){
+					if(iter.next().equals(vA))
+						cond2 = false;
+				}
+				if(cond1 && cond2)
+					aux.add(vA);
+			}
+		}
+		if(aux.isEmpty()){
+			if(lista.size() > 2)
+				com.add(new Comunidad(lista));
+		}
+		else{
+			Iterator<Vertex> iterAux = aux.iterator();
+			while(iterAux.hasNext()){
+				LinkedList<Vertex> listaC = new LinkedList<>();
+				listaC.addAll(lista);
+				Vertex ver = iterAux.next();
+				agregarComunidadesDeUsuario(ver, aux, listaC, com);
+			}
+		}
+	}	
+	private boolean yaExisteEstaComunidad(ArrayList<Comunidad> comunidades, LinkedList<Vertex> nuevaComunidad){
+		boolean yaExiste = false;
+		for(int i=0; i<comunidades.size() && !yaExiste; i++){
+			Comunidad c = comunidades.get(i);
+			LinkedList<Vertex> usuariosDeComunidad = c.getUsuarios();
+			if(usuariosDeComunidad.size() == nuevaComunidad.size()){
+				boolean mismosUsuarios = true;
+				Iterator<Vertex> iterNC = nuevaComunidad.iterator();
+				while(iterNC.hasNext() && mismosUsuarios){
+					Usuario uNuevaComunidad = (Usuario)iterNC.next().getInfo();
+					String nickUNC = uNuevaComunidad.getNick();
+					boolean encontrado = false;
+					Iterator<Vertex> iterUC = usuariosDeComunidad.iterator();
+					while(iterUC.hasNext() && !encontrado){
+						Usuario uComunidad = (Usuario)iterUC.next().getInfo();
+						String nickUC = uComunidad.getNick();
+						if(nickUC.equals(nickUNC))
+							encontrado = true;
+					}
+					if(!encontrado)
+						mismosUsuarios = false;
+				}
+				if(mismosUsuarios)
+					yaExiste = true;
+			}
+		}
+		return yaExiste;
+	}
 	public LinkedList<Trabajo> trabajosDeUsuario(Vertex vertex){
 		LinkedList<Trabajo> lista = new LinkedList<Trabajo>();
 		Usuario usuario = (Usuario)vertex.getInfo();
@@ -141,8 +260,8 @@ public class Red{
 		}
 		return lista;
 	}
-	
-	public void actualizarFicheroIslas(ArrayList<Usuario> lista) throws IOException{
+
+	private void actualizarFicheroIslas(ArrayList<Usuario> lista) throws IOException{
 		FileWriter fw = new FileWriter(islas);
 		fw.write("USUARIOS ISLAS");
 		for(int i=0; i<lista.size(); i++){
@@ -155,7 +274,21 @@ public class Red{
 		}
 		fw.close();
 	}
-
+	private void actualizarFicheroComunidades(ArrayList<Comunidad> lista) throws IOException{
+		FileWriter fw = new FileWriter(comunidades);
+		fw.write("COMUNIDADES");
+		for(int i=0; i<lista.size(); i++){
+			fw.write("\n\n");
+			fw.write("Miembros de la Comunidad "+(i+1)+":");
+			Comunidad c = lista.get(i);
+			Iterator<Vertex> iter = c.getUsuarios().iterator();
+			while(iter.hasNext()){
+				Usuario u = (Usuario)iter.next().getInfo();
+				fw.write("\n"+u.getNick());
+			}
+		}
+		fw.close();
+	}
 	public void agregarArcoAFichero(int posOrigen, int posDestino) throws IOException, ClassNotFoundException{
 		Arco a = new Arco(posOrigen, posDestino);
 		RandomAccessFile fich = new RandomAccessFile(arcos, "rw");

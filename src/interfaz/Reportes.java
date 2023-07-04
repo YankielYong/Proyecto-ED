@@ -237,8 +237,10 @@ public class Reportes extends JDialog{
 		});
 		btnComunidades.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				/*btnComunidades.setBorderPainted(false);
-				dispose();*/
+				btnComunidades.setBorderPainted(false);
+				dispose();
+				VentanaComunidades vc = new VentanaComunidades(padre, este, red, vUsuario);
+				vc.setVisible(true);
 			}
 		});
 		btnComunidades.setModel(new MyButtonModel());
