@@ -7,11 +7,20 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 
 import util.Convert;
 import cu.edu.cujae.ceis.graph.LinkedGraph;
+import cu.edu.cujae.ceis.graph.edge.Edge;
+import cu.edu.cujae.ceis.graph.edge.WeightedEdge;
 import cu.edu.cujae.ceis.graph.interfaces.ILinkedWeightedEdgeNotDirectedGraph;
 import cu.edu.cujae.ceis.graph.vertex.Vertex;
+import cu.edu.cujae.ceis.tree.TreeNode;
+import cu.edu.cujae.ceis.tree.binary.BinaryTreeNode;
+import cu.edu.cujae.ceis.tree.general.GeneralTree;
+import cu.edu.cujae.ceis.tree.iterators.general.BreadthNode;
+import cu.edu.cujae.ceis.tree.iterators.general.InBreadthIterator;
+import cu.edu.cujae.ceis.tree.iterators.general.InBreadthIteratorWithLevels;
 
 public class Red{
 
@@ -124,6 +133,93 @@ public class Red{
 		return peso;
 	}
 
+	public ArrayList<Usuario> obtenerAmigos(Vertex v){
+		ArrayList<Usuario> amigos = new ArrayList<Usuario>();
+		LinkedList<Vertex> adj = v.getAdjacents();
+		Iterator<Vertex> iter = adj.iterator();
+		while(iter.hasNext())
+			amigos.add((Usuario)iter.next().getInfo());
+		return amigos;
+	}
+
+	public GeneralTree<Usuario> obtenerRelacionJerDeAmigos(Vertex v){
+		GeneralTree<Usuario> arbol = new GeneralTree<Usuario>();
+		Usuario raiz = (Usuario)v.getInfo();
+		arbol.setRoot(new BinaryTreeNode<Usuario>(raiz));
+		LinkedList<Edge> arcos = v.getEdgeList();
+		agregarNodos(arbol, arcos, null);
+		try {
+			actualizarFicheroArbolAmigos(arbol);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return arbol;
+	}
+	private void agregarNodos(GeneralTree<Usuario> arbol, LinkedList<Edge> arcos, Integer superior){
+		int mayor = -1;
+		ArrayList<Usuario> agregar = new ArrayList<Usuario>();
+		Iterator<Edge> iter = arcos.iterator();
+		if(superior == null){
+			while(iter.hasNext()){
+				WeightedEdge edge = (WeightedEdge)iter.next();
+				int peso = (int)edge.getWeight();
+				if(peso>mayor){
+					mayor = peso;
+					agregar.clear();
+					agregar.add((Usuario)edge.getVertex().getInfo());
+				}
+				else if(peso==mayor)
+					agregar.add((Usuario)edge.getVertex().getInfo());
+			}
+		}
+		else{
+			while(iter.hasNext()){
+				WeightedEdge edge = (WeightedEdge)iter.next();
+				int peso = (int)edge.getWeight();
+				if(peso>mayor && peso<superior){
+					mayor = peso;
+					agregar.clear();
+					agregar.add((Usuario)edge.getVertex().getInfo());
+				}
+				else if(peso==mayor)
+					agregar.add((Usuario)edge.getVertex().getInfo());
+			}
+		}
+		if(agregar.size() > 0){
+			if(superior == null){
+				for(int i=0; i<agregar.size(); i++)
+					arbol.insertNode(new BinaryTreeNode<Usuario>(agregar.get(i)), (BinaryTreeNode<Usuario>)arbol.getRoot());
+			}
+			else{
+				ArrayList<BinaryTreeNode<Usuario>> hojas = obtenerHojas(arbol);
+				for(int i=0; i<agregar.size(); i++){
+					BinaryTreeNode<Usuario> padre = nodoConMenosHijos(arbol, hojas);
+					arbol.insertNode(new BinaryTreeNode<Usuario>(agregar.get(i)), padre);
+				}
+			}
+			agregarNodos(arbol, arcos, mayor);
+		}
+	}
+	private ArrayList<BinaryTreeNode<Usuario>> obtenerHojas(GeneralTree<Usuario> arbol){
+		ArrayList<BinaryTreeNode<Usuario>> lista = new ArrayList<BinaryTreeNode<Usuario>>();
+		List<TreeNode<Usuario>> hojas = arbol.getLeaves();
+		for(int i=0; i<hojas.size(); i++)
+			lista.add((BinaryTreeNode<Usuario>)hojas.get(i));
+		return lista;
+	}
+	private BinaryTreeNode<Usuario> nodoConMenosHijos(GeneralTree<Usuario> arbol, ArrayList<BinaryTreeNode<Usuario>> hojas){
+		BinaryTreeNode<Usuario> node = new BinaryTreeNode<Usuario>();
+		int menor = Integer.MAX_VALUE;
+		for(int i=0; i<hojas.size(); i++){
+			BinaryTreeNode<Usuario> aux = hojas.get(i);
+			int cant = arbol.getSons(aux).size();
+			if(cant < menor){
+				menor = cant;
+				node = aux;
+			}
+		}
+		return node;
+	}
 	public ArrayList<Usuario> obtenerIslas(){
 		ArrayList<Usuario> islas = new ArrayList<Usuario>();
 		LinkedList<Vertex> lista = grafo.getVerticesList();
@@ -261,6 +357,26 @@ public class Red{
 		return lista;
 	}
 
+	private void actualizarFicheroArbolAmigos(GeneralTree<Usuario> arbol) throws IOException{
+		FileWriter fw = new FileWriter(arbolAmigos);
+		fw.write("RELACIÓN JERÁRQUICA DE AMIGOS\n\n\n");
+		InBreadthIteratorWithLevels<Usuario> iter = arbol.inBreadthIteratorWithLevels();
+		int nivel = 1;
+		while(iter.hasNext()){
+			BreadthNode<Usuario> node = iter.nextNodeWithLevel();
+			int level = node.getLevel();
+			if(level == 0)
+				fw.write("Raíz: "+node.getInfo().getNick()+"\n");
+			else{
+				if(level == nivel){
+					fw.write("\nNivel "+nivel+":\n");
+					nivel++;
+				}
+				fw.write(node.getInfo().getNick()+"\n");
+			}
+		}
+		fw.close();
+	}
 	private void actualizarFicheroIslas(ArrayList<Usuario> lista) throws IOException{
 		FileWriter fw = new FileWriter(islas);
 		fw.write("USUARIOS ISLAS");

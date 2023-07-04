@@ -118,7 +118,10 @@ public class SeleccionarUsuario extends JDialog{
 				int pos = table.getSelectedRow();
 				Usuario us = listaMostrar.get(pos);
 				Vertex ver = red.buscarUsuario(us.getNick());
-
+				dispose();
+				if(titulo.getText().equals("Relación jerárquica de amigos")){
+					red.obtenerRelacionJerDeAmigos(ver);
+				}
 			}
 		});
 		table.getTableHeader().setReorderingAllowed(false);
