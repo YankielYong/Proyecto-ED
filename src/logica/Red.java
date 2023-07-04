@@ -19,11 +19,12 @@ import cu.edu.cujae.ceis.tree.TreeNode;
 import cu.edu.cujae.ceis.tree.binary.BinaryTreeNode;
 import cu.edu.cujae.ceis.tree.general.GeneralTree;
 import cu.edu.cujae.ceis.tree.iterators.general.BreadthNode;
-import cu.edu.cujae.ceis.tree.iterators.general.InBreadthIterator;
 import cu.edu.cujae.ceis.tree.iterators.general.InBreadthIteratorWithLevels;
+import cu.edu.cujae.ceis.tree.iterators.general.InDepthIterator;
 
-public class Red{
+public final class Red{
 
+	private static Red instance;
 	private File usuarios;
 	private File arcos;
 	private File trab;
@@ -35,7 +36,7 @@ public class Red{
 	private File islas;
 	private File comunidades;
 
-	public Red() throws IOException, ClassNotFoundException{
+	private Red() throws IOException, ClassNotFoundException{
 		usuarios = new File("data/USUARIOS.DAT");
 		arcos = new File("data/ARCOS.DAT");
 		trab = new File("data/TRABAJOS.DAT");
@@ -52,6 +53,12 @@ public class Red{
 		crearFicheroArcos();*/
 
 		inicializar();
+	}
+
+	public static Red getInstance() throws ClassNotFoundException, IOException{
+		if(instance == null)
+			instance = new Red();
+		return instance;
 	}
 
 	public ILinkedWeightedEdgeNotDirectedGraph getGrafo(){
@@ -133,21 +140,12 @@ public class Red{
 		return peso;
 	}
 
-	public ArrayList<Usuario> obtenerAmigos(Vertex v){
-		ArrayList<Usuario> amigos = new ArrayList<Usuario>();
-		LinkedList<Vertex> adj = v.getAdjacents();
-		Iterator<Vertex> iter = adj.iterator();
-		while(iter.hasNext())
-			amigos.add((Usuario)iter.next().getInfo());
-		return amigos;
-	}
-
 	public GeneralTree<Usuario> obtenerRelacionJerDeAmigos(Vertex v){
 		GeneralTree<Usuario> arbol = new GeneralTree<Usuario>();
 		Usuario raiz = (Usuario)v.getInfo();
 		arbol.setRoot(new BinaryTreeNode<Usuario>(raiz));
 		LinkedList<Edge> arcos = v.getEdgeList();
-		agregarNodos(arbol, arcos, null);
+		agregarNodosAmigos(arbol, arcos, null);
 		try {
 			actualizarFicheroArbolAmigos(arbol);
 		} catch (IOException e) {
@@ -155,7 +153,7 @@ public class Red{
 		}
 		return arbol;
 	}
-	private void agregarNodos(GeneralTree<Usuario> arbol, LinkedList<Edge> arcos, Integer superior){
+	private void agregarNodosAmigos(GeneralTree<Usuario> arbol, LinkedList<Edge> arcos, Integer superior){
 		int mayor = -1;
 		ArrayList<Usuario> agregar = new ArrayList<Usuario>();
 		Iterator<Edge> iter = arcos.iterator();
@@ -197,14 +195,121 @@ public class Red{
 					arbol.insertNode(new BinaryTreeNode<Usuario>(agregar.get(i)), padre);
 				}
 			}
-			agregarNodos(arbol, arcos, mayor);
+			agregarNodosAmigos(arbol, arcos, mayor);
 		}
 	}
+	public GeneralTree<Usuario> obtenerRelacionJerDeConexiones(Vertex v){
+		GeneralTree<Usuario> arbol = new GeneralTree<Usuario>();
+		ArrayList<Usuario> yaEstan = new ArrayList<Usuario>();
+		Usuario raiz = (Usuario)v.getInfo();
+		arbol.setRoot(new BinaryTreeNode<Usuario>(raiz));
+		yaEstan.add(raiz);
+		LinkedList<Vertex> amigos = v.getAdjacents();
+		agregarNodosConexiones(arbol, raiz, amigos, yaEstan, true, 0);
+		try {
+			actualizarFicheroArbolConexiones(arbol);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return arbol;
+	}
+	private void agregarNodosConexiones(GeneralTree<Usuario> arbol, Usuario padre, 
+			LinkedList<Vertex> listaAgregar, ArrayList<Usuario> yaEstan, boolean sgtNivel, int nivel){
+
+		BinaryTreeNode<Usuario> father = obtenerNodo(arbol, padre);
+		Iterator<Vertex> iter = listaAgregar.iterator();
+		while(iter.hasNext()){
+			Vertex v = iter.next();
+			Usuario ag = (Usuario)v.getInfo();
+			if(!yaSeAgrego(ag, yaEstan)){
+				yaEstan.add(ag);
+				arbol.insertNode(new BinaryTreeNode<Usuario>(ag), father);
+			}
+		}
+		if(sgtNivel){
+			int level = nivelArbol(arbol);
+			if(level != nivel){
+				ArrayList<BinaryTreeNode<Usuario>> hojas = obtenerHojas(arbol);
+				boolean pasarSgtNivel = false;
+				for(int i=0; i<hojas.size(); i++){
+					if(i+1 == hojas.size())
+						pasarSgtNivel = true;
+					Usuario nuevoPadre = hojas.get(i).getInfo();
+					Vertex v = buscarUsuario(nuevoPadre.getNick());
+					LinkedList<Vertex> amigos = v.getAdjacents();
+					agregarNodosConexiones(arbol, nuevoPadre, amigos, yaEstan, pasarSgtNivel, level);
+				}
+			}
+		}
+	}
+	public ArrayList<Usuario> obtenerLideresInvestigacion(){
+		ArrayList<Usuario> lista = new ArrayList<Usuario>();
+		Iterator<Vertex> iter = grafo.getVerticesList().iterator();
+		int mayor = -1;
+		while(iter.hasNext()){
+			Vertex v = iter.next();
+			GeneralTree<Usuario> arbol = obtenerRelacionJerDeAmigos(v);
+			int nivel = nivelArbol(arbol);
+			if(nivel > mayor){
+				mayor = nivel;
+				lista.clear();
+				lista.add((Usuario)v.getInfo());
+			}
+			else if(nivel == mayor)
+				lista.add((Usuario)v.getInfo());
+		}
+		try {
+			actualizarFicheroLideresInvestigacion(lista);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return lista;
+	}
+	private int nivelArbol(GeneralTree<Usuario> arbol){
+		int level = -1;
+		InBreadthIteratorWithLevels<Usuario> iter = arbol.inBreadthIteratorWithLevels();
+		while(iter.hasNext()){
+			BreadthNode<Usuario> node = iter.nextNodeWithLevel();
+			int nivel = node.getLevel();
+			if(nivel > level)
+				level = nivel;
+		}
+		return level;
+	}
+	private BinaryTreeNode<Usuario> obtenerNodo(GeneralTree<Usuario> arbol, Usuario padre){
+		BinaryTreeNode<Usuario> node = null;
+		InDepthIterator<Usuario> iter = arbol.inDepthIterator();
+		while(iter.hasNext() && node == null){
+			BinaryTreeNode<Usuario> aux = iter.nextNode();
+			if(aux.getInfo().getNick().equals(padre.getNick()))
+				node = aux;
+		}
+		return node;
+	}
+	private boolean yaSeAgrego(Usuario usuario, ArrayList<Usuario> yaEstan){
+		boolean esta = false;
+		for(int i=0; i<yaEstan.size() && !esta; i++){
+			if(yaEstan.get(i).getNick().equals(usuario.getNick()))
+				esta = true;
+		}
+		return esta;
+	}
+	
 	private ArrayList<BinaryTreeNode<Usuario>> obtenerHojas(GeneralTree<Usuario> arbol){
 		ArrayList<BinaryTreeNode<Usuario>> lista = new ArrayList<BinaryTreeNode<Usuario>>();
 		List<TreeNode<Usuario>> hojas = arbol.getLeaves();
-		for(int i=0; i<hojas.size(); i++)
-			lista.add((BinaryTreeNode<Usuario>)hojas.get(i));
+		int mayorNivel = -1;
+		for(int i=0; i<hojas.size(); i++){
+			BinaryTreeNode<Usuario> aux = (BinaryTreeNode<Usuario>)hojas.get(i);
+			int level = arbol.nodeLevel(aux);
+			if(level > mayorNivel){
+				mayorNivel = level;
+				lista.clear();
+				lista.add(aux);
+			}
+			else if(level == mayorNivel)
+				lista.add(aux);
+		}
 		return lista;
 	}
 	private BinaryTreeNode<Usuario> nodoConMenosHijos(GeneralTree<Usuario> arbol, ArrayList<BinaryTreeNode<Usuario>> hojas){
@@ -374,6 +479,49 @@ public class Red{
 				}
 				fw.write(node.getInfo().getNick()+"\n");
 			}
+		}
+		fw.close();
+	}
+	private void actualizarFicheroArbolConexiones(GeneralTree<Usuario> arbol) throws IOException{
+		FileWriter fw = new FileWriter(arbolConexiones);
+		fw.write("RELACIÓN JERÁRQUICA DE CONEXIONES\n\n\n");
+		InBreadthIteratorWithLevels<Usuario> iter = arbol.inBreadthIteratorWithLevels();
+		int nivel = 1;
+		String padre = "";
+		while(iter.hasNext()){
+			BreadthNode<Usuario> node = iter.nextNodeWithLevel();
+			Usuario u = node.getInfo();
+			String nick = u.getNick();
+			int level = node.getLevel();
+			if(level == 0){
+				fw.write("Raíz: "+nick+"\n");
+			}
+			else{
+				if(level == nivel){
+					fw.write("\nNIVEL "+nivel+":\n");
+					nivel++;
+				}
+				BinaryTreeNode<Usuario> nodeB = obtenerNodo(arbol, u);
+				String padr = arbol.getFather(nodeB).getInfo().getNick();
+				if(!padr.equals(padre)){
+					padre = padr;
+					fw.write("\nHijos de "+padre+":\n");
+				}
+				fw.write(nick+"\n");
+			}
+		}
+		fw.close();
+	}
+	private void actualizarFicheroLideresInvestigacion(ArrayList<Usuario> lista) throws IOException{
+		FileWriter fw = new FileWriter(lidereInvestigacion);
+		fw.write("LÍDERES DE INVESTIGACIÓN");
+		for(int i=0; i<lista.size(); i++){
+			fw.write("\n\n");
+			Usuario u = lista.get(i);
+			fw.write("Usuario "+(i+1));
+			fw.write(":\nNombre de usuario: "+u.getNick());
+			fw.write("\nProfesión: "+u.getProfesion());
+			fw.write("\nPaís: "+u.getPais());
 		}
 		fw.close();
 	}

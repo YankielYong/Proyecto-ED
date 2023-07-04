@@ -89,7 +89,7 @@ public class Inicial extends JFrame {
 			}
 		});
 		este = this;
-		red = new Red();
+		red = Red.getInstance();
 		cantN = cantS = 0;
 		setResizable(false);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

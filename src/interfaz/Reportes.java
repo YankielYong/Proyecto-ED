@@ -177,8 +177,9 @@ public class Reportes extends JDialog{
 		});
 		btnLideresInvestigacion.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				/*btnLideresInvestigacion.setBorderPainted(false);
-				dispose();*/
+				btnLideresInvestigacion.setBorderPainted(false);
+				dispose();
+				red.obtenerLideresInvestigacion();
 			}
 		});
 		btnLideresInvestigacion.setModel(new MyButtonModel());

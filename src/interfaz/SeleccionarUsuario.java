@@ -122,6 +122,9 @@ public class SeleccionarUsuario extends JDialog{
 				if(titulo.getText().equals("Relación jerárquica de amigos")){
 					red.obtenerRelacionJerDeAmigos(ver);
 				}
+				else if(titulo.getText().equals("Relación jerárquica de conexiones")){
+					red.obtenerRelacionJerDeConexiones(ver);
+				}
 			}
 		});
 		table.getTableHeader().setReorderingAllowed(false);
