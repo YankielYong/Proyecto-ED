@@ -6,8 +6,6 @@ import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -19,15 +17,17 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 
+import util.AmigosTableModel;
 import util.MyButtonModel;
-import util.UsuariosTableModel;
 import cu.edu.cujae.ceis.graph.vertex.Vertex;
+import cu.edu.cujae.ceis.tree.general.GeneralTree;
+import cu.edu.cujae.ceis.tree.iterators.general.BreadthNode;
+import cu.edu.cujae.ceis.tree.iterators.general.InBreadthIteratorWithLevels;
 import logica.Red;
 import logica.Usuario;
 
@@ -35,7 +35,7 @@ public class PantallaNiveles extends JDialog{
 
 	private static final long serialVersionUID = 1L;
 	private Inicial padre;
-	private Reportes anterior;
+	private SeleccionarUsuario anterior;
 	private PantallaNiveles este;
 	private Dimension pantalla = Toolkit.getDefaultToolkit().getScreenSize();
 	private JPanel contentPane;
@@ -45,24 +45,30 @@ public class PantallaNiveles extends JDialog{
 	private JLabel titulo;
 	private JScrollPane scrollPane;
 	private JTable table;
-	private UsuariosTableModel tableModel;
+	private AmigosTableModel tableModel;
 	private Red red;
 	private Vertex vUsuario;
+	private Vertex vPerfil;
 	private ArrayList<Usuario> listaMostrar;
-	private ArrayList<Usuario> islas;
 	private JButton btnalante;
 	private JButton btnatras;
 	private JButton btnAtras;
-	
-	public PantallaNiveles(Inicial p, Reportes a, Red r, Vertex v){
+	private GeneralTree<Usuario> arbol;
+	private JLabel lblNivel;
+	private int nivel;
+	private int nivelMax;
+
+	public PantallaNiveles(Inicial p, SeleccionarUsuario a, Red r, Vertex v, Vertex vU){
 		super(p, true);
 		padre = p;
 		anterior = a;
 		este = this;
 		red = r;
-		vUsuario = v;
-		islas = red.obtenerIslas();
-		listaMostrar = islas;
+		vPerfil = v;
+		vUsuario = vU;
+		arbol = red.obtenerRelacionJerDeAmigos(vPerfil);
+		nivel = 0;
+		nivelMax = red.nivelArbol(arbol);
 		setResizable(false);
 		setUndecorated(true);
 		setBounds(pantalla.width/2-225, pantalla.height/2-270, 600, 600);
@@ -85,7 +91,7 @@ public class PantallaNiveles extends JDialog{
 		titulo.setFont(new Font("Arial", Font.PLAIN, 20));
 		titulo.setBounds(8, 0, 300, 30);
 		panelSuperior.add(titulo);
-		
+
 
 		btnCerrar = new JButton("");
 		btnCerrar.setModel(new MyButtonModel());
@@ -114,18 +120,18 @@ public class PantallaNiveles extends JDialog{
 
 		panelInferior = new JPanel();
 		panelInferior.setBackground(Color.WHITE);
-		panelInferior.setBounds(10, 16, 600, 613);
+		panelInferior.setBounds(0, 30, 600, 570);
 		panelInferior.setLayout(null);
 		contentPane.add(panelInferior);
-		
-		
+
+
 		scrollPane = new JScrollPane();
 		scrollPane.setBackground(Color.WHITE);
 		scrollPane.setForeground(Color.BLACK);
 		scrollPane.setFont(new Font("Arial", Font.PLAIN, 22));
 		scrollPane.setBorder(new TitledBorder(new LineBorder(new Color(0, 0, 0), 1, true), "Jerarqu\u00EDa", TitledBorder.LEFT, TitledBorder.TOP, null, new Color(0, 0, 0)));
 		((TitledBorder)scrollPane.getBorder()).setTitleFont(new Font("Arial", Font.PLAIN, 22));
-		scrollPane.setBounds(25, 67, 550, 464);
+		scrollPane.setBounds(25, 65, 550, 450);
 		panelInferior.add(scrollPane);
 
 		table = new JTable();
@@ -155,7 +161,7 @@ public class PantallaNiveles extends JDialog{
 		table.setFont(new Font("Arial", Font.PLAIN, 15));
 		table.setBackground(Color.WHITE);
 		scrollPane.setViewportView(table);
-		
+
 		btnalante = new JButton("");
 		btnalante.addMouseListener(new MouseAdapter() {
 			@Override
@@ -169,15 +175,19 @@ public class PantallaNiveles extends JDialog{
 		});
 		btnalante.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				if(nivel < nivelMax){
+					nivel++;
+					mostrarUsuarios();
+				}
 			}
 		});
 		btnalante.setIcon(new ImageIcon(PantallaNiveles.class.getResource("/imagenes/derecha30.png")));
-		btnalante.setBounds(520, 535, 55, 42);
+		btnalante.setBounds(520, 520, 55, 42);
 		btnalante.setContentAreaFilled(false);
 		btnalante.setFocusable(false);
 		btnalante.setBorderPainted(false);
 		panelInferior.add(btnalante);
-		
+
 		btnatras = new JButton((String) null);
 		btnatras.addMouseListener(new MouseAdapter() {
 			@Override
@@ -191,26 +201,31 @@ public class PantallaNiveles extends JDialog{
 		});
 		btnatras.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
+				if(nivel > 0){
+					nivel--;
+					mostrarUsuarios();
+				}
 			}
 		});
 		btnatras.setIcon(new ImageIcon(PantallaNiveles.class.getResource("/imagenes/izquierda30.png")));
-		btnatras.setBounds(25, 535, 55, 42);
+		btnatras.setBounds(25, 520, 55, 42);
 		btnatras.setContentAreaFilled(false);
 		btnatras.setFocusable(false);
 		btnatras.setBorderPainted(false);
 		panelInferior.add(btnatras);
-		
-		JLabel lblNewLabel = new JLabel(":Nivel Anterior");
-		lblNewLabel.setFont(new Font("Arial", Font.PLAIN, 18));
-		lblNewLabel.setBounds(83, 546, 143, 20);
-		panelInferior.add(lblNewLabel);
-		
-		JLabel lblNewLabel_1 = new JLabel("Nivel Siguiente:");
-		lblNewLabel_1.setFont(new Font("Arial", Font.PLAIN, 18));
-		lblNewLabel_1.setBounds(393, 547, 143, 20);
-		panelInferior.add(lblNewLabel_1);
-		
+
+		JLabel lblNivelAnterior = new JLabel("Nivel Anterior");
+		lblNivelAnterior.setForeground(Color.BLACK);
+		lblNivelAnterior.setFont(new Font("Arial", Font.PLAIN, 18));
+		lblNivelAnterior.setBounds(80, 530, 140, 20);
+		panelInferior.add(lblNivelAnterior);
+
+		JLabel lblNivelSiguiente = new JLabel("Nivel Siguiente");
+		lblNivelSiguiente.setForeground(Color.BLACK);
+		lblNivelSiguiente.setFont(new Font("Arial", Font.PLAIN, 18));
+		lblNivelSiguiente.setBounds(400, 530, 140, 20);
+		panelInferior.add(lblNivelSiguiente);
+
 		btnAtras = new JButton("");
 		btnAtras.setModel(new MyButtonModel());
 		btnAtras.setBackground(new Color(46, 139, 87));
@@ -228,23 +243,27 @@ public class PantallaNiveles extends JDialog{
 		btnAtras.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				dispose();
-				SeleccionarUsuario su= new SeleccionarUsuario(padre, anterior, red, vUsuario, "Relación jerárquica de amigos");
-				su.setVisible(true);
-				//anterior.setVisible(true);
+				anterior.setVisible(true);
 			}
 		});
 		btnAtras.setFont(new Font("Arial", Font.PLAIN, 12));
 		btnAtras.setContentAreaFilled(false);
 		btnAtras.setFocusable(false);
 		btnAtras.setBorderPainted(false);
-		btnAtras.setBounds(15, 27, 42, 35);
+		btnAtras.setBounds(15, 20, 42, 35);
 		panelInferior.add(btnAtras);
-		
-		mostrarIslas();
+
+		lblNivel = new JLabel("Raíz");
+		lblNivel.setFont(new Font("Arial", Font.PLAIN, 22));
+		lblNivel.setForeground(Color.BLACK);
+		lblNivel.setBounds(70, 20, 200, 30);
+		panelInferior.add(lblNivel);
+
+		mostrarUsuarios();
 	}
-	
-	private void mostrarIslas(){
-		tableModel = new UsuariosTableModel(){
+
+	private void mostrarUsuarios(){
+		tableModel = new AmigosTableModel(){
 			private static final long serialVersionUID = 1L;
 			@Override
 			public boolean isCellEditable(int row, int column) {
@@ -259,10 +278,35 @@ public class PantallaNiveles extends JDialog{
 		table.getColumnModel().getColumn(2).setPreferredWidth(90);
 		table.getColumnModel().getColumn(2).setResizable(false);
 		scrollPane.getViewport().setBackground(Color.WHITE);
-		
+
+		actualizar();
+	}
+
+	private void actualizar(){
+		listaMostrar = new ArrayList<Usuario>();
+		InBreadthIteratorWithLevels<Usuario> iter = arbol.inBreadthIteratorWithLevels();
+		while(iter.hasNext()){
+			BreadthNode<Usuario> node = iter.nextNodeWithLevel();
+			if(node.getLevel() == nivel)
+				listaMostrar.add(node.getInfo());
+		}
+
+		switch(nivel){
+		case 0: lblNivel.setText("Raíz"); break;
+		default: lblNivel.setText("Nivel "+nivel);
+		}
+
 		for(int i=0; i<listaMostrar.size(); i++){
 			Usuario u = listaMostrar.get(i);
-			String[] datos = {u.getNick(), u.getProfesion(), u.getPais()};
+			Vertex vUs = red.buscarUsuario(u.getNick());
+			int pos1 = red.getGrafo().getVerticesList().indexOf(vPerfil);
+			int pos2 = red.getGrafo().getVerticesList().indexOf(vUs);
+			String peso;
+			if(lblNivel.getText().equals("Raíz"))
+				peso = "Raíz";
+			else
+				peso = String.valueOf(red.calcularPeso(pos1, pos2));
+			String[] datos = {u.getNick(), u.getProfesion(), u.getPais(), peso};
 			tableModel.addRow(datos);
 		}
 	}

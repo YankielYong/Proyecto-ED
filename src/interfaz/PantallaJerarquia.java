@@ -9,10 +9,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.List;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -23,21 +21,17 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import javax.swing.border.MatteBorder;
 
-import logica.Notificacion;
 import logica.Red;
-import logica.SolicitudAmistad;
-import logica.Trabajo;
 import logica.Usuario;
-import cu.edu.cujae.ceis.graph.edge.Edge;
-import cu.edu.cujae.ceis.graph.edge.WeightedEdge;
 import cu.edu.cujae.ceis.graph.vertex.Vertex;
-import util.AmigosTableModel;
+import cu.edu.cujae.ceis.tree.binary.BinaryTreeNode;
+import cu.edu.cujae.ceis.tree.general.GeneralTree;
 import util.MyButtonModel;
 import util.TrabajosTableModel;
 import util.UsuariosTableModel;
+import javax.swing.SwingConstants;
 
 public class PantallaJerarquia extends JDialog{
 
@@ -56,21 +50,22 @@ public class PantallaJerarquia extends JDialog{
 	private JLabel lblProfesion;
 	private JLabel lblPais;
 	private JLabel logoCUJAE;
-	private JButton btnAmigos;
-	private JButton btnTrabajos;
+	private JButton btnHijos;
 	private JScrollPane scrollPane;
 	private JTable table;
 	private UsuariosTableModel tableModelJerarquia;
 	private TrabajosTableModel tableModelTrabajos;
 	private Red red;
 	private Vertex vPerfil;
-	private Usuario usuario;
 	private Usuario perfil;
-	private LinkedList<Vertex> amigos;
-	private LinkedList<Trabajo> trabajos;
 	private JLabel titulo;
+	private GeneralTree<Usuario> arbol;
+	private ArrayList<Usuario> hijos;
+	private int nivel;
+	private BinaryTreeNode<Usuario> nodeUsuario;
+	private JLabel lblNivel;
 
-	public PantallaJerarquia(Inicial p, JDialog an, Red r, Vertex vp){
+	public PantallaJerarquia(Inicial p, JDialog an, Red r, Vertex vp, GeneralTree<Usuario> tree){
 		super(p, true);
 		padre = p;
 		anterior = an;
@@ -78,6 +73,7 @@ public class PantallaJerarquia extends JDialog{
 		vPerfil = vp;
 		perfil = (Usuario)vPerfil.getInfo();
 		este = this;
+		arbol = tree;
 		setResizable(false);
 		setUndecorated(true);
 		setBounds(pantalla.width/2-425, pantalla.height/2-270, 1000, 600);
@@ -104,24 +100,24 @@ public class PantallaJerarquia extends JDialog{
 		lblUsuario = new JLabel("Nombre de Usuario: "+perfil.getNick());
 		lblUsuario.setForeground(Color.BLACK);
 		lblUsuario.setFont(new Font("Arial", Font.PLAIN, 22));
-		lblUsuario.setBounds(30, 300, 450, 40);
+		lblUsuario.setBounds(30, 360, 450, 40);
 		panelInferiorIzquierdo.add(lblUsuario);
 
 		lblPais = new JLabel("Pa\u00EDs: "+perfil.getPais());
 		lblPais.setForeground(Color.BLACK);
 		lblPais.setFont(new Font("Arial", Font.PLAIN, 22));
-		lblPais.setBounds(30, 420, 450, 40);
+		lblPais.setBounds(30, 480, 450, 40);
 		panelInferiorIzquierdo.add(lblPais);
 
 		lblProfesion = new JLabel("Profesión: "+perfil.getProfesion());
 		lblProfesion.setForeground(Color.BLACK);
 		lblProfesion.setFont(new Font("Arial", Font.PLAIN, 22));
-		lblProfesion.setBounds(30, 360, 450, 40);
+		lblProfesion.setBounds(30, 420, 450, 40);
 		panelInferiorIzquierdo.add(lblProfesion);
 
 		logoCUJAE = new JLabel("");
 		logoCUJAE.setIcon(new ImageIcon(MiPerfil.class.getResource("/imagenes/logo CUJAE 181x200.png")));
-		logoCUJAE.setBounds(160, 60, 181, 200);
+		logoCUJAE.setBounds(160, 100, 181, 200);
 		panelInferiorIzquierdo.add(logoCUJAE);
 
 		panelSuperior = new JPanel();
@@ -129,11 +125,11 @@ public class PantallaJerarquia extends JDialog{
 		panelSuperior.setBounds(0, 0, 1000, 30);
 		contentPane.add(panelSuperior);
 		panelSuperior.setLayout(null);
-		
-		titulo = new JLabel("Perfil de Usuario");
+
+		titulo = new JLabel("Relación jerárquica de conexiones");
 		titulo.setForeground(Color.BLACK);
 		titulo.setFont(new Font("Arial", Font.PLAIN, 20));
-		titulo.setBounds(8, 0, 200, 30);
+		titulo.setBounds(8, 0, 400, 30);
 		panelSuperior.add(titulo);
 
 		btnCerrar = new JButton("");
@@ -160,8 +156,6 @@ public class PantallaJerarquia extends JDialog{
 				dispose();
 			}
 		});
-
-		
 
 		btnAtras = new JButton("");
 		btnAtras.setModel(new MyButtonModel());
@@ -192,43 +186,34 @@ public class PantallaJerarquia extends JDialog{
 		btnAtras.setContentAreaFilled(false);
 		btnAtras.setFocusable(false);
 		btnAtras.setBorderPainted(false);
-		btnAtras.setBounds(10, 10, 42, 35);
+		btnAtras.setBounds(10, 22, 42, 35);
 		panelInferiorIzquierdo.add(btnAtras);
 
-		btnAmigos = new JButton("Hijos");
-		btnAmigos.setModel(new MyButtonModel());
-		btnAmigos.setBackground(Color.WHITE);
-		btnAmigos.addActionListener(new ActionListener() {
+		btnHijos = new JButton("Hijos");
+		btnHijos.setModel(new MyButtonModel());
+		btnHijos.setBackground(Color.WHITE);
+		btnHijos.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if(table.getModel().equals(tableModelTrabajos))
 					tablaJerarquia();
 			}
 		});
-		btnAmigos.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		btnAmigos.setForeground(Color.BLACK);
-		btnAmigos.setBorder(new MatteBorder(0, 0, 4, 0, (Color) new Color(46, 139, 87)));
-		btnAmigos.setFont(new Font("Arial", Font.PLAIN, 22));
-		btnAmigos.setFocusable(false);
-		btnAmigos.setContentAreaFilled(false);
-		btnAmigos.setBounds(5, 44, 88, 30);
-		panelInferiorDerecho.add(btnAmigos);
-
-		btnTrabajos = new JButton("Trabajos");
-		btnTrabajos.setModel(new MyButtonModel());
-		btnTrabajos.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if(table.getModel().equals(tableModelJerarquia))
-					tablaTrabajos();
-			}
-		});
-		btnTrabajos.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		btnTrabajos.setForeground(Color.BLACK);
-		btnTrabajos.setBorder(new MatteBorder(0, 0, 4, 0, (Color) new Color(46, 139, 87)));
-		btnTrabajos.setFont(new Font("Arial", Font.PLAIN, 22));
-		btnTrabajos.setFocusable(false);
-		btnTrabajos.setContentAreaFilled(false);
-		btnTrabajos.setBounds(110, 44, 95, 30);
-		panelInferiorDerecho.add(btnTrabajos);
+		btnHijos.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		btnHijos.setForeground(Color.BLACK);
+		btnHijos.setBorder(new MatteBorder(0, 0, 4, 0, (Color) new Color(46, 139, 87)));
+		btnHijos.setFont(new Font("Arial", Font.PLAIN, 22));
+		btnHijos.setFocusable(false);
+		btnHijos.setBorderPainted(true);
+		btnHijos.setContentAreaFilled(false);
+		btnHijos.setBounds(5, 44, 88, 30);
+		panelInferiorDerecho.add(btnHijos);
+		
+		lblNivel = new JLabel("Raíz");
+		lblNivel.setHorizontalAlignment(SwingConstants.CENTER);
+		lblNivel.setFont(new Font("Arial", Font.PLAIN, 30));
+		lblNivel.setForeground(Color.BLACK);
+		lblNivel.setBounds(141, 20, 200, 40);
+		panelInferiorIzquierdo.add(lblNivel);
 
 		scrollPane = new JScrollPane();
 		scrollPane.setForeground(Color.BLACK);
@@ -244,7 +229,11 @@ public class PantallaJerarquia extends JDialog{
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				int pos = table.getSelectedRow();
-				
+				Usuario u = hijos.get(pos);
+				Vertex ve = red.buscarUsuario(u.getNick());
+				dispose();
+				PantallaJerarquia pj = new PantallaJerarquia(padre, este, red, ve, arbol);
+				pj.setVisible(true);
 			}
 		});
 		table.getTableHeader().setReorderingAllowed(false);
@@ -274,53 +263,27 @@ public class PantallaJerarquia extends JDialog{
 		table.getColumnModel().getColumn(2).setPreferredWidth(90);
 		table.getColumnModel().getColumn(2).setResizable(false);
 		scrollPane.getViewport().setBackground(Color.WHITE);
-		btnAmigos.setBorderPainted(true);
-		btnTrabajos.setBorderPainted(false);
-		mostrarAmigos();
+
+		mostrarHijos();
 	}
 
-	private void tablaTrabajos(){
-		tableModelTrabajos = new TrabajosTableModel(){
-			private static final long serialVersionUID = 1L;
-			@Override
-			public boolean isCellEditable(int row, int column) {
-				return false;
-			}
-		};
-		table.setModel(tableModelTrabajos);
-		table.getColumnModel().getColumn(0).setPreferredWidth(170);
-		table.getColumnModel().getColumn(0).setResizable(false);
-		table.getColumnModel().getColumn(1).setPreferredWidth(280);
-		table.getColumnModel().getColumn(1).setResizable(false);
-		scrollPane.getViewport().setBackground(Color.WHITE);
-		btnAmigos.setBorderPainted(false);
-		btnTrabajos.setBorderPainted(true);
-		mostrarTrabajos();
-	}
+	private void mostrarHijos(){
+		hijos = new ArrayList<Usuario>();
+		nodeUsuario = red.obtenerNodo(arbol, perfil);
+		List<BinaryTreeNode<Usuario>> h = arbol.getSons(nodeUsuario);
+		for(int i=0; i<h.size(); i++)
+			hijos.add(h.get(i).getInfo());
 
-	private void mostrarTrabajos(){
-		trabajos = red.trabajosDeUsuario(vPerfil);
-		Iterator<Trabajo> iter = trabajos.iterator();
-		while(iter.hasNext()){
-			Trabajo t = iter.next();
-			String[] datos = {t.getLineaInvestigacion(), t.getTema()};
-			tableModelTrabajos.addRow(datos);
+		nivel = arbol.nodeLevel(nodeUsuario);
+		switch(nivel){
+		case 0: lblNivel.setText("Raíz"); break;
+		default: lblNivel.setText("Nivel "+nivel);
 		}
-	}
 
-	private void mostrarAmigos(){
-		LinkedList<Edge> arcos = vPerfil.getEdgeList();
-		amigos = vPerfil.getAdjacents();
-		Iterator<Edge> it = arcos.iterator();
-		Iterator<Vertex> iter = amigos.iterator();
-		while(iter.hasNext()){
-			WeightedEdge a = (WeightedEdge)it.next();
-			Vertex v = iter.next();
-			Usuario u = (Usuario)v.getInfo();
-			String[] datos = {u.getNick(), u.getProfesion(), u.getPais(), String.valueOf((int)a.getWeight())};
+		for(int i=0; i<hijos.size(); i++){
+			Usuario u = hijos.get(i);
+			String[] datos = {u.getNick(), u.getProfesion(), u.getPais()};
 			tableModelJerarquia.addRow(datos);
 		}
 	}
-
-	
 }

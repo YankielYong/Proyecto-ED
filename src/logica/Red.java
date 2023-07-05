@@ -265,7 +265,7 @@ public final class Red{
 		}
 		return lista;
 	}
-	private int nivelArbol(GeneralTree<Usuario> arbol){
+	public int nivelArbol(GeneralTree<Usuario> arbol){
 		int level = -1;
 		InBreadthIteratorWithLevels<Usuario> iter = arbol.inBreadthIteratorWithLevels();
 		while(iter.hasNext()){
@@ -276,7 +276,7 @@ public final class Red{
 		}
 		return level;
 	}
-	private BinaryTreeNode<Usuario> obtenerNodo(GeneralTree<Usuario> arbol, Usuario padre){
+	public BinaryTreeNode<Usuario> obtenerNodo(GeneralTree<Usuario> arbol, Usuario padre){
 		BinaryTreeNode<Usuario> node = null;
 		InDepthIterator<Usuario> iter = arbol.inDepthIterator();
 		while(iter.hasNext() && node == null){
@@ -997,6 +997,7 @@ public final class Red{
 		fich.close();
 		return tr;
 	}
+	@SuppressWarnings("unused")
 	private void crearFicheroArcos() throws IOException{
 		RandomAccessFile fich = new RandomAccessFile(arcos, "rw");
 		ArrayList<Arco> ar = listaArcos();
@@ -1012,6 +1013,7 @@ public final class Red{
 		}
 		fich.close();
 	}
+	@SuppressWarnings("unused")
 	private void crearFicheroUsuarios() throws IOException{
 		RandomAccessFile fich = new RandomAccessFile(usuarios, "rw");
 		ArrayList<Usuario> us = listaUsuarios();
@@ -1027,6 +1029,7 @@ public final class Red{
 		}
 		fich.close();
 	}
+	@SuppressWarnings("unused")
 	private void crearFicheroTrabajos() throws IOException{
 		RandomAccessFile fich = new RandomAccessFile(trab, "rw");
 		LinkedList<Trabajo> tr = listaTrabajos();

@@ -1,21 +1,12 @@
 RELACIÓN JERÁRQUICA DE CONEXIONES
 
 
-Raíz: llerena777_
+Raíz: elyanko
 
 NIVEL 1:
 
-Hijos de llerena777_:
-elyanko
-patrybarrios
-kendry_ow02
-ale_grdgez
-rociofdez.7
-esteban_03
-
-NIVEL 2:
-
 Hijos de elyanko:
+patrybarrios
 agySaulio
 antonio
 lebroccc
@@ -34,9 +25,15 @@ dguezzzzzz
 felixvelazquez19
 dany_chdez
 marlitin.02
+kendry_ow02
+ale_grdgez
+rociofdez.7
 fgaby_gomz
+llerena777_
 _arlety_gj
 thali_0401
+
+NIVEL 2:
 
 Hijos de patrybarrios:
 leo_nuevo
@@ -51,11 +48,6 @@ juliohelguera
 keylitabella.03
 carlosalfer_06
 
-Hijos de esteban_03:
-lismaray6
-
-NIVEL 3:
-
 Hijos de cosetinha:
 sussel_29
 
@@ -65,6 +57,16 @@ l.angel_96
 
 Hijos de felixvelazquez19:
 delgado_mai_56
+
+Hijos de llerena777_:
+esteban_03
+
+NIVEL 3:
+
+Hijos de esteban_03:
+lismaray6
+
+NIVEL 4:
 
 Hijos de lismaray6:
 sheymaresma03

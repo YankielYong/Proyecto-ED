@@ -179,7 +179,8 @@ public class Reportes extends JDialog{
 			public void actionPerformed(ActionEvent e) {
 				btnLideresInvestigacion.setBorderPainted(false);
 				dispose();
-				red.obtenerLideresInvestigacion();
+				VentanaLideres vl = new VentanaLideres(padre, este, red, vUsuario);
+				vl.setVisible(true);
 			}
 		});
 		btnLideresInvestigacion.setModel(new MyButtonModel());
